@@ -1,56 +1,119 @@
 #include "model/build_model.h"
 
 #include "data/constants.cuh"
-#include "io/config.h"
 #include "model/model_symbols.cuh"
 
 namespace austrian_abm {
 
-void BuildModel(flamegpu::ModelDescription& model) {
+namespace {
+
+flamegpu::AgentDescription MakeCoreCell(flamegpu::ModelDescription& model) {
+    flamegpu::AgentDescription cell = model.newAgent("cell");
+    cell.newVariable<unsigned int, 2>("pos");
+    cell.newVariable<int>("agent_id");
+    cell.newVariable<int>("status");
+    cell.newVariable<int>("sugar_level");
+    cell.newVariable<int>("spice_level");
+    cell.newVariable<int>("metabolism");
+    cell.newVariable<float>("money");
+    cell.newVariable<int>("env_sugar_level");
+    cell.newVariable<int>("env_spice_level");
+    cell.newVariable<int>("env_max_sugar_level");
+    cell.newVariable<int>("env_max_spice_level");
+    cell.newVariable<float>("sugar_bid");
+    cell.newVariable<float>("sugar_ask");
+    cell.newVariable<float>("spice_bid");
+    cell.newVariable<float>("spice_ask");
+    return cell;
+}
+
+}  // namespace
+
+void BuildModel(flamegpu::ModelDescription& model, const SimulationConfig& config) {
     auto env = model.Environment();
+    env.newProperty<unsigned int>("GRID_WIDTH", config.grid_width);
+    env.newProperty<unsigned int>("GRID_HEIGHT", config.grid_height);
+    env.newProperty<float>("OCCUPANCY", config.occupancy);
+    env.newProperty<float>("INITIAL_MONEY", config.initial_money);
+    env.newProperty<unsigned int>("RANDOM_SEED", config.seed);
+    env.newProperty<unsigned int>("GOOD_STAGES", config.good_stages);
+    env.newProperty<unsigned int>("AGENT_COUNT", 0u);
+    env.newProperty<unsigned int>("TRADES_COUNT", 0u);
+    env.newProperty<float>("TRADE_VOLUME", 0.0f);
+    env.newProperty<float>("AVG_TRADE_PRICE", 0.0f);
+    env.newProperty<float>("LAST_SUGAR_PRICE", 1.0f);
+    env.newProperty<float>("LAST_SPICE_PRICE", 1.0f);
 
-    env.newProperty<unsigned int>("CONSUMER_COUNT",
-        ParseUnsignedEnv("AUSTRIAN_ABM_CONSUMERS", kDefaultConsumerCount));
-    env.newProperty<unsigned int>("PRODUCER_COUNT",
-        ParseUnsignedEnv("AUSTRIAN_ABM_PRODUCERS", kDefaultProducerCount));
-    env.newProperty<unsigned int>("MARKET_STEPS",
-        ParseUnsignedEnv("AUSTRIAN_ABM_MARKET_STEPS", kDefaultMarketSteps));
-    env.newProperty<unsigned int>("RANDOM_SEED", ParseRandomSeedEnv());
-    env.newProperty<unsigned int>("MARKET_STEP", 0u);
-    env.newProperty<float>("CLEARING_PRICE",
-        ParseFloatEnv("AUSTRIAN_ABM_INITIAL_PRICE", kDefaultClearingPrice));
+    flamegpu::ModelDescription movement_model("movement_model");
+    {
+        {
+            auto message = movement_model.newMessage<flamegpu::MessageArray2D>("cell_status");
+            message.newVariable<flamegpu::id_t>("location_id");
+            message.newVariable<int>("status");
+            message.newVariable<int>("env_sugar_level");
+            message.newVariable<int>("env_spice_level");
+            message.setDimensions(config.grid_width, config.grid_height);
+        }
+        {
+            auto message = movement_model.newMessage<flamegpu::MessageArray2D>("movement_request");
+            message.newVariable<int>("agent_id");
+            message.newVariable<flamegpu::id_t>("location_id");
+            message.newVariable<int>("sugar_level");
+            message.newVariable<int>("spice_level");
+            message.newVariable<int>("metabolism");
+            message.newVariable<float>("money");
+            message.setDimensions(config.grid_width, config.grid_height);
+        }
+        {
+            auto message = movement_model.newMessage<flamegpu::MessageArray2D>("movement_response");
+            message.newVariable<int>("agent_id");
+            message.setDimensions(config.grid_width, config.grid_height);
+        }
 
-    auto consumer = model.newAgent("consumer");
-    consumer.newVariable<float>("cash");
-    consumer.newVariable<float>("goods_held");
-    consumer.newVariable<float>("time_preference");
-    consumer.newVariable<float>("base_utility");
-    consumer.newVariable<float>("reservation_price");
-    consumer.newVariable<float>("desired_qty");
-    consumer.newVariable<float>("last_trade_qty");
-    consumer.newFunction("ConsumerPlanPurchase", ConsumerPlanPurchase);
-    consumer.newFunction("ConsumerExecuteTrade", ConsumerExecuteTrade);
+        flamegpu::AgentDescription cell = MakeCoreCell(movement_model);
+        auto fn_output = cell.newFunction("OutputCellStatus", OutputCellStatus);
+        fn_output.setMessageOutput("cell_status");
+        auto fn_request = cell.newFunction("MovementRequest", MovementRequest);
+        fn_request.setMessageInput("cell_status");
+        fn_request.setMessageOutput("movement_request");
+        auto fn_response = cell.newFunction("MovementResponse", MovementResponse);
+        fn_response.setMessageInput("movement_request");
+        fn_response.setMessageOutput("movement_response");
+        auto fn_transaction = cell.newFunction("MovementTransaction", MovementTransaction);
+        fn_transaction.setMessageInput("movement_response");
 
-    auto producer = model.newAgent("producer");
-    producer.newVariable<float>("capital");
-    producer.newVariable<float>("productivity");
-    producer.newVariable<float>("unit_cost");
-    producer.newVariable<float>("alertness");
-    producer.newVariable<float>("inventory");
-    producer.newVariable<float>("ask_price");
-    producer.newVariable<float>("last_output");
-    producer.newFunction("ProducerProduce", ProducerProduce);
-    producer.newFunction("ProducerSetPrice", ProducerSetPrice);
+        movement_model.newLayer().addAgentFunction(fn_output);
+        movement_model.newLayer().addAgentFunction(fn_request);
+        movement_model.newLayer().addAgentFunction(fn_response);
+        movement_model.newLayer().addAgentFunction(fn_transaction);
+        movement_model.addExitCondition(MovementExitCondition);
+    }
 
-    model.newLayer("L1_ProducerProduce").addAgentFunction(producer.getFunction("ProducerProduce"));
-    model.newLayer("L2_ProducerSetPrice").addAgentFunction(producer.getFunction("ProducerSetPrice"));
-    model.newLayer("L3_ConsumerPlanPurchase").addAgentFunction(consumer.getFunction("ConsumerPlanPurchase"));
-    model.newLayer("L4_ConsumerExecuteTrade").addAgentFunction(consumer.getFunction("ConsumerExecuteTrade"));
+    {
+        auto message = model.newMessage<flamegpu::MessageBruteForce>("trade_offer");
+        message.newVariable<int>("agent_id");
+        message.newVariable<int>("good");
+        message.newVariable<int>("side");
+        message.newVariable<float>("price");
+        message.newVariable<int>("quantity");
+    }
 
-    model.addStepFunction(AdvanceMarket);
+    flamegpu::AgentDescription cell = MakeCoreCell(model);
+    cell.newFunction("MetaboliseAndGrowback", MetaboliseAndGrowback);
+    auto fn_trade = cell.newFunction("OutputTradeOffers", OutputTradeOffers);
+    fn_trade.setMessageOutput("trade_offer");
 
-    model.addInitFunction(SeedConsumers);
-    model.addInitFunction(SeedProducers);
+    flamegpu::SubModelDescription movement_sub =
+        model.newSubModel("movement_conflict_resolution", movement_model);
+    movement_sub.bindAgent("cell", "cell", true, true);
+
+    model.newLayer("L1_MetaboliseAndGrowback").addAgentFunction(cell.getFunction("MetaboliseAndGrowback"));
+    model.newLayer("L2_Movement").addSubModel(movement_sub);
+    model.newLayer("L3_OutputTradeOffers").addAgentFunction(fn_trade);
+
+    model.addStepFunction(MatchTrades);
+    model.addStepFunction(LogMarketStep);
+    model.addInitFunction(SeedGrid);
 }
 
 }  // namespace austrian_abm

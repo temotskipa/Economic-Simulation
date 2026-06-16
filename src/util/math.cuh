@@ -8,4 +8,8 @@ FLAMEGPU_HOST_DEVICE_FUNCTION float ClampFloat(const float v, const float lo, co
     return v < lo ? lo : (v > hi ? hi : v);
 }
 
+FLAMEGPU_HOST_DEVICE_FUNCTION int ClampInt(const int v, const int lo, const int hi) {
+    return v < lo ? lo : (v > hi ? hi : v);
+}
+
 }  // namespace austrian_abm

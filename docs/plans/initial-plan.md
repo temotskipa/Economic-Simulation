@@ -1,176 +1,216 @@
-# Initial Implementation Plan — Austrian ABM Simulation
+# Austrian ABM Simulation — Direct Implementation Instructions for Grok Composer 2.5 Fast
 
-**Status:** Draft  
-**Last updated:** 2026-06-17  
-**Reference project:** [Wisconsin-PR-Simulation](https://github.com/temotskipa/Wisconsin-PR-Simulation) (same FLAME GPU 2 / CMake layout)
+**Version:** 3.1 — Sugarscape Extension Foundation (Revised)  
+**Date:** 2026-06-17  
+**Target Environment:** Windows 11, CUDA 13.x, RTX 4070 Ti (sm_89), Visual Studio 2022  
+**Framework:** FLAME GPU 2 (C++ template)  
+**Primary Model:** You are Grok Composer 2.5 Fast running inside Grok Build  
+**Foundation:** Port + Extend existing FLAME GPU 2 Sugarscape implementation  
+**Objective:** Build a decentralized, emergent market-process economic simulation on top of Sugarscape where prices, capital structure, trade, wealth dynamics, and business cycles arise strictly from heterogeneous agent rules and local interactions. No central clearing or imposed equilibrium.
 
-## Vision
+---
 
-Build a GPU-accelerated agent-based economic simulation where macro patterns (prices, trade, capital structure, business cycles) **emerge** from heterogeneous individual agents acting on local knowledge and subjective valuations. The model rejects equilibrium enforcement and representative-agent shortcuts in favor of a genuine **market process**.
+## Your Role & Strict Operating Rules
 
-## Design Principles
+You are the coding agent. Your job is to implement by editing files, running builds/tests via tools, verifying after every task, and reporting results.
 
-1. **Methodological individualism** — All macro variables are aggregates of agent-level state; no top-down vote or price enforcement.
-2. **Subjective value** — Utility and reservation prices are agent-local, not globally imposed.
-3. **Entrepreneurial discovery** — Producers discover opportunities through alertness, error, and price signals (Kirzner/Hayek).
-4. **Roundabout production** — Capital goods, stages of production, and time preference shape intertemporal coordination (Böhm-Bawerk).
-5. **Modular FLAME GPU layout** — Mirror Wisconsin PR: `src/model/`, `src/host/`, `src/domain/`, `src/io/`, `src/data/`.
+**Mandatory Rules:**
+- Work **one task at a time** in exact order.
+- After **every task** you **must** run the verification command(s), report output, and only proceed if it passes.
+- Never skip verification.
+- Use exact file paths and names specified.
+- Keep all changes minimal and clean for Windows + CUDA 13.
+- Show diffs or changed lines when editing.
+- Fix build/test failures before moving on.
+- Use PowerShell commands and Windows paths.
+- Leverage sub-agents for parallel work when useful (e.g., device functions vs host logic).
+- Maintain `austrian_abm` namespace and `AUSTRIAN_ABM_*` env vars.
+- All economic behavior must be local and subjective.
 
-## Phase 0 — Scaffold (current)
+**Golden Run (use for major verifications):** seed=42, 5000 agents, 12 steps. Snapshot logs or `market_history.jsonl`.
 
-**Goal:** Compilable FLAME GPU 2 project with minimal two-agent-type market loop.
+---
 
-| Item | Status |
-|------|--------|
-| CMake + FLAME GPU fetch (`cmake/flamegpu2.cmake`) | Done |
-| `consumer` and `producer` agents | Done |
-| Subjective reservation pricing (`domain/marginal_utility.cuh`) | Done |
-| Host price discovery (`host/step_advance_market.cu`) | Done |
-| Config via `AUSTRIAN_ABM_*` env vars | Done |
-| Unit test for marginal utility | Done |
-| Smoke test script | Done |
-| README + AGENTS.md | Done |
+## Environment & Constraints
 
-**Exit criteria:** `cmake --build` succeeds; smoke test runs 6 steps without error; unit tests pass.
+- Windows 11 + Visual Studio 2022 + CUDA 13 (sm_89).
+- Use these exact commands:
+  ```powershell
+  cmake -B build -S . -G "Visual Studio 17 2022" -A x64 -DCMAKE_CUDA_ARCHITECTURES=89
+  cmake --build build --config Release -j $env:NUMBER_OF_PROCESSORS
+  $env:AUSTRIAN_ABM_GOOD_STAGES="2"; .\build\bin\Release\austrian_abm.exe --steps 12 --seed 42
+  ```
+- Existing Wisconsin-PR layout and any current scaffold must be respected or cleanly integrated.
+- You may create files in `src/domain/`, `src/host/`, `src/model/`, `src/io/`, `src/data/`, `tests/`, `scripts/`.
+- Device functions → `src/domain/*.cuh`
+- Host logic → `src/host/`
 
-## Phase 1 — Market Mechanism Hardening
+**Sugarscape Foundation (already exists in FLAME GPU 2):**
+- Discrete grid of regenerating resource patches (sugar + spice)
+- Mobile agents with vision, metabolism, movement to higher resources
+- Basic bilateral trade when MRS differs
+- Submodel pattern for resolving simultaneous claims on patches (critical for future matching)
+- Scales to millions of agents
 
-**Goal:** Replace simplified proportional clearing with a proper decentralized matching process.
+Your job is to **port/adapt** this into the project and then extend it.
 
-### Tasks
+---
 
-- [ ] Add `MessageBruteForce` or `MessageSpatial2D` for local order books (producer ask ↔ consumer bid)
-- [ ] Track per-step `TRADES_COUNT`, `VOLUME_WEIGHTED_PRICE` via GPU macro properties
-- [ ] Split `AdvanceMarket` into: (a) GPU tally pass, (b) host price update from tallies only
-- [ ] Add `tests/test_price_discovery.cpp` for host-side price adjustment math
-- [ ] Golden-run baseline: seed=42, 5k consumers, 200 producers, 12 steps → snapshot stdout series
+## Overall Workflow
 
-### Non-goals
+1. Read phase and tasks.
+2. Implement tasks in listed order.
+3. After each task: run verification, report result, only continue on success.
+4. At end of phase: run golden run + phase exit checks.
+5. Suggest Git commit.
+6. Only advance after confirming all exit criteria.
 
-- No futures markets or derivatives yet
-- No multi-good economy yet (single composite good)
+---
 
-## Phase 2 — Reporting and Observability
+## Phase 1 — Port & Extend Sugarscape with Decentralized Money-Mediated Trade
 
-**Goal:** Structured outputs for analysis and regression testing.
+**Goal:** Bring the working FLAME GPU 2 Sugarscape into the project and extend it with money as a medium of exchange + proper decentralized reservation-price trading. This replaces any minimal scaffold and gives immediate spatial economics + emergent trade.
 
-### Tasks
+### Tasks (in exact order)
 
-- [ ] `src/io/report_html.cu` — step-by-step price, volume, Gini(cash), inventory distribution
-- [ ] `src/host/step_log.cpp` — append `market_steps.jsonl` each step
-- [ ] `election_history`-style time series: `market_history.jsonl` with price, demand, supply, trade count
-- [ ] Smoke test verifies report artifacts exist (mirror Wisconsin `run_small_sim.ps1`)
-- [ ] Optional SVG sparkline for price series
+**Task 1.1 — Port Sugarscape base into the project**  
+- Reference the official FLAME GPU 2 Sugarscape Python tutorial and the C++ description in the 2023 paper.
+- Create/adapt the core files:
+  - Patch/resource agents (regenerating sugar + spice on a grid)
+  - Person/agent with vision, metabolism, position, inventory (sugar, spice), wealth
+  - Movement logic using existing submodel pattern for conflict resolution
+  - Basic metabolism and death/reproduction
+- Integrate into `src/model/model.cu`, `src/domain/`, and `src/host/`.
+- Make it compile and run a basic 12-step simulation.
 
-## Phase 3 — Capital and Roundabout Production
+**Verification:** Clean Release build + golden run completes without crash. Agents move and resources regenerate.
 
-**Goal:** Introduce capital goods, investment decisions, and heterogeneous production periods.
+**Task 1.2 — Add money balances and environment properties**  
+Extend agents with a `money` variable (or deposits).  
+Add environment properties for initial money distribution, trade radius, etc.
 
-### Agent extensions
+**Verification:** Build succeeds and agents can hold money.
 
-| Agent | New variables |
-|-------|---------------|
-| `producer` | `capital_goods`, `labor_hours`, `production_period`, `expected_return` |
-| `capital_owner` (new) | `savings`, `time_preference`, `lending_rate` |
+**Task 1.3 — Implement decentralized trade offers (money-mediated)**  
+Create `src/domain/trade_functions.cuh` with:
+- `OutputTradeOffers` — agents post reservation-price bids/asks for sugar/spice using money (based on marginal utility / MRS).
+- Use `MessageBruteForce` or `MessageSpatial2D` (start with BruteForce for simplicity).
 
-### Tasks
+Register the functions in the correct layer after movement/metabolism.
 
-- [ ] New `capital_owner` agent type with intertemporal consumption/saving choice
-- [ ] Producers bid for capital; owners allocate by expected return vs. time preference
-- [ ] Multi-stage production: raw → intermediate → consumer good (env `GOOD_STAGES`)
-- [ ] Host function `SyncMarketSignals` copying aggregate prices into env arrays for device lookup
-- [ ] Unit tests for present-value calculations and investment threshold math
+**Verification:** Build succeeds. Agents output trade messages.
 
-## Phase 4 — Money and Credit
+**Task 1.4 — Implement trade matching & execution**  
+Create `src/host/step_match_trades.cu` (recommended for Phase 1):
+- Read trade offers.
+- Match crossing bids/asks (simple price-based or random for MVP).
+- Execute trades by updating money + inventory on both agents.
+- Log `TRADES_COUNT` and volume-weighted price.
 
-**Goal:** Medium of exchange and fractional-reserve banking as emergent coordination mechanisms.
+Wire into the simulation loop.
 
-### Tasks
+**Verification:** Golden run produces `TRADES_COUNT > 0` and varying effective prices. Report sample trade data.
 
-- [ ] `bank` agent: deposits, reserves, lending, maturity mismatch
-- [ ] Money stock as env macro property; individual cash balances in bank deposits
-- [ ] Entrepreneur loan demand driven by expected profit vs. interest rate
-- [ ] Optional: simulate malinvestment boom/bust from artificially low rates (policy shock env var)
-- [ ] Document ABCT (Austrian Business Cycle Theory) mapping in README
+**Task 1.5 — Add basic logging**  
+Implement step logger writing `market_history.jsonl` with step, average price, trade volume, wealth Gini, population, total sugar/spice.
 
-## Phase 5 — Spatial Market Structure
+**Verification:** Log file is produced with meaningful data after golden run.
 
-**Goal:** Geographic or network heterogeneity in information and trade.
+**Phase 1 Exit Criteria (confirm all):**
+- Clean build on Windows + CUDA 13.
+- Golden run completes.
+- Agents trade using money and `TRADES_COUNT > 0`.
+- `market_history.jsonl` exists with real data.
+- Spatial movement + resource regeneration still works.
 
-### Tasks
+---
 
-- [ ] `MessageSpatial2D` for regional markets with transport cost
-- [ ] Regional price dispersion (arbitrage by high-alertness entrepreneurs)
-- [ ] `data/region_profiles.cuh` for region-specific productivity and preferences
-- [ ] Optional county/sector seeding script (`scripts/gen_region_profiles.py`)
+## Phase 2 — Observability & Multi-Good Production
 
-## Phase 6 — Validation and Research Outputs
+**Goal:** Improve visibility and begin adding production chains on top of the Sugarscape foundation.
 
-**Goal:** Reproducible experiments and publication-ready artifacts.
+**Tasks:**
+- Enhance HTML report generator (`src/io/report_html.cu`) showing wealth distribution, trade networks, resource maps if possible.
+- Add simple production recipes (e.g., combining sugar + spice into higher-utility “food”).
+- Extend agents with production activity choice based on local prices and skills.
 
-### Tasks
+**Phase 2 Exit Criteria:** Richer reports + basic production activity visible in logs/golden run.
 
-- [ ] Experiment matrix script (`scripts/run_experiment_grid.ps1`)
-- [ ] Compare emergent price series against analytical partial-equilibrium benchmarks (sanity, not fit)
-- [ ] Performance benchmarks: 100k / 1M consumers, report steps/sec
-- [ ] CI workflow (GitHub Actions self-hosted GPU or build-only + unit tests)
+---
 
-## Architecture Diagram
+## Phase 3 — Capital, Roundabout Production & Time Preference
 
-```mermaid
-flowchart TB
-    subgraph init [Init Layer]
-        SC[SeedConsumers]
-        SP[SeedProducers]
-    end
+**Goal:** Introduce capital goods, multi-stage production, and capital owners who save/invest according to time preference.
 
-    subgraph market [Market Round Layer]
-        PP[ProducerProduce]
-        PS[ProducerSetPrice]
-        CP[ConsumerPlanPurchase]
-        CT[ConsumerExecuteTrade]
-        AM[AdvanceMarket host]
-    end
+**Key additions (build on Sugarscape agents):**
+- New or extended `capital_owner` behavior.
+- Capital goods that boost production efficiency.
+- Present-value calculations (`src/domain/present_value.cuh`).
+- Investment decisions based on expected returns vs time preference.
+- Multi-stage production (raw resources → intermediate → final goods).
 
-    SC --> PP
-    SP --> PP
-    PP --> PS --> CP --> CT --> AM
-    AM -->|"CLEARING_PRICE"| PP
-```
+**Implementation order:** Data structures → capital mechanics → investment functions → update golden run → verify capital accumulation and differential production periods.
 
-## File Conventions (from Wisconsin PR)
+**Phase 3 Exit Criteria:** Capital owners allocate savings, longer production processes appear when profitable, golden run shows capital stock growth.
 
-| Pattern | Convention |
-|---------|------------|
-| Namespace | `austrian_abm` |
-| Env prefix | `AUSTRIAN_ABM_` |
-| Constants | `src/data/constants.cuh` |
-| Device-safe econ logic | `src/domain/*.cuh` |
-| Host-only econ logic | `src/domain/*.h` + `.cpp` if needed |
-| Cross-TU symbols | `src/model/model_symbols.cuh` |
-| CMake source list | Explicit `ALL_SRC` in `CMakeLists.txt` |
+---
 
-## Risk Register
+## Phase 4 — Money, Credit & Austrian Business Cycle
 
-| Risk | Mitigation |
-|------|------------|
-| Host pull of large populations is slow | Move tallies to GPU macro properties in Phase 1 |
-| Economic semantics drift toward neoclassical equilibrium | AGENTS.md boundaries; code review checklist |
-| FLAME GPU API changes on `master` | Pin `FLAMEGPU_VERSION` tag if builds break; document in README |
-| Single-good model too simplistic | Phase 3 multi-stage production |
+**Goal:** Add banking and credit creation with maturity transformation. Enable interest rate shocks to demonstrate ABCT-style effects on top of the Sugarscape economy.
 
-## Open Questions
+**Key additions:**
+- `bank` agent type with reserves, deposits, loans.
+- Loan market between entrepreneurs and banks.
+- Environment variable for artificial rate suppression.
+- Observation of malinvestment (excessive funding of longer production periods).
 
-1. **Numeraire:** Start with fiat-like unit of account, or commodity money from Phase 0?
-2. **Labor market:** Explicit `worker` agents in Phase 3, or implicit labor input on producers?
-3. **Policy shocks:** Environment variables for central-bank rate, or separate `central_bank` agent?
-4. **Visualization:** Enable `FLAMEGPU_VISUALISATION` for spatial markets in Phase 5?
+**Phase 4 Exit Criteria:** Banks create credit, a rate shock changes capital structure, effects visible in logs.
 
-## References
+---
 
-- Hayek, F.A. — "The Use of Knowledge in Society" (1945)
-- Kirzner, I.M. — *Competition and Entrepreneurship* (1973)
-- Böhm-Bawerk, E. — *Capital and Interest* (1890)
-- Howden, D. — "Austrian Economics and Simulation" (2010, *Review of Austrian Economics*)
-- FLAME GPU 2 docs: https://docs.flamegpu.com/
-- Wisconsin PR Simulation (structural reference): local clone at `C:\Users\ttski\Projects\Wisconsin-PR-Simulation`
+## Phase 5 — Spatial Enhancement & Regional Heterogeneity (Optional)
+
+Further leverage and extend Sugarscape’s spatial nature with `MessageSpatial2D`, regional productivity differences, and observable price dispersion/arbitrage.
+
+---
+
+## Phase 6 — Validation, Experiments & CI
+
+Add experiment scripts, performance benchmarks on your 4070 Ti (aim for large agent counts thanks to Sugarscape scaling), and basic sanity checks.
+
+---
+
+## Architecture Constraints
+
+- Preserve and extend the Sugarscape execution flow (resource growth → movement → metabolism/trade → demographics).
+- Use message passing for all agent interaction.
+- Use submodels for conflict resolution (movement or matching) as demonstrated in the original Sugarscape FLAME GPU 2 implementation.
+- Keep decisions local and subjective.
+
+---
+
+## Verification Protocol
+
+After every task:
+1. Build with the exact CMake command.
+2. Run golden run (or phase-specific test).
+3. Confirm expected behavior occurred.
+4. Report build status + key output.
+5. Only proceed on success.
+
+---
+
+## Quick Reference Commands
+
+Use the PowerShell commands listed in the Environment section for all builds and golden runs.
+
+---
+
+**You now have a complete, self-contained instruction set centered on porting and extending Sugarscape.**
+
+Start by confirming understanding of the rules, then begin **Phase 1 Task 1.1** (porting the Sugarscape base). Report the result after verification, then continue.
+
+When you need the exact code for any task (e.g., “Implement Task 1.3 — trade offers on Sugarscape agents”), reply with the task number and I will provide the precise implementation.
+
+Execute. Verify. Report. Proceed.

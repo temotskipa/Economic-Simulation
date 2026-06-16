@@ -7,12 +7,13 @@
 namespace austrian_abm {
 
 void RunMain(int argc, const char** argv) {
+    const SimulationConfig config = ParseSimulationConfig(argc, argv);
     flamegpu::ModelDescription model(kModelName);
-    BuildModel(model);
+    BuildModel(model, config);
+
     flamegpu::CUDASimulation simulation(model);
-    simulation.SimulationConfig().steps =
-        ParseUnsignedEnv("AUSTRIAN_ABM_MARKET_STEPS", kDefaultMarketSteps);
-    simulation.SimulationConfig().random_seed = ParseRandomSeedEnv();
+    simulation.SimulationConfig().steps = config.steps;
+    simulation.SimulationConfig().random_seed = config.seed;
     simulation.applyConfig();
     simulation.simulate();
 }
