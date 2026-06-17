@@ -21,7 +21,12 @@ int ParseCategory(const std::string& value) {
     if (value == "STAPLE") return kCategoryStaple;
     if (value == "IND") return kCategoryIndustrial;
     if (value == "TECH") return kCategoryTech;
-    throw std::runtime_error("Unknown good category: " + value);
+    if (value == "SVC_TRANSPORT") return kCategorySvcTransport;
+    if (value == "SVC_CONSTRUCTION") return kCategorySvcConstruction;
+    if (value == "SVC_CLERICAL") return kCategorySvcClerical;
+    if (value == "SVC_HEALTH") return kCategorySvcHealth;
+    if (value == "SVC_EDUCATION") return kCategorySvcEducation;
+    throw std::runtime_error("Unknown catalog category: " + value);
 }
 
 int ParseActivity(const std::string& value) {
@@ -37,6 +42,24 @@ int ResolveGoodIndex(const SimulationCatalog& catalog, const std::string& id) {
         throw std::runtime_error("Unknown good id in catalog: " + id);
     }
     return it->second;
+}
+
+void ParseCatalogEntry(
+    const nlohmann::json& row,
+    SimulationCatalog& catalog,
+    const int index,
+    const int kind) {
+    catalog.kind[index] = kind;
+    catalog.category[index] = ParseCategory(row.at("category").get<std::string>());
+    catalog.utility[index] = row.at("utility").get<float>();
+    catalog.default_price[index] = row.value("default_price", 1.0f);
+    catalog.flags[index] = row.value("tradeable", true) ? kGoodFlagTradeable : 0u;
+    catalog.complement[index] = kNoComplementGood;
+    if (row.contains("complement")) {
+        catalog.complement[index] = ResolveGoodIndex(catalog, row.at("complement").get<std::string>());
+    }
+    catalog.decay_per_step[index] = row.value(
+        "decay_per_step", kind == kKindService ? 1 : 0);
 }
 
 void ParseRecipeInputs(
@@ -108,29 +131,42 @@ SimulationCatalog LoadSimulationCatalog(const std::filesystem::path& path) {
 
     const auto& goods = root.at("goods");
     if (!goods.is_array()) throw std::runtime_error("catalog.goods must be an array");
-    if (goods.size() > kMaxGoods) {
-        throw std::runtime_error("Too many goods in catalog (max " + std::to_string(kMaxGoods) + ")");
+
+    nlohmann::json services = nlohmann::json::array();
+    if (root.contains("services")) {
+        services = root.at("services");
+        if (!services.is_array()) throw std::runtime_error("catalog.services must be an array");
     }
 
+    catalog.goods_count = static_cast<unsigned int>(goods.size());
+    catalog.services_count = static_cast<unsigned int>(services.size());
+    catalog.good_count = catalog.goods_count + catalog.services_count;
+    if (catalog.good_count > kMaxGoods) {
+        throw std::runtime_error("Too many catalog entries (max " + std::to_string(kMaxGoods) + ")");
+    }
+
+    int index = 0;
     for (std::size_t i = 0; i < goods.size(); ++i) {
         const std::string id = goods[i].at("id").get<std::string>();
         if (catalog.good_index.contains(id)) {
-            throw std::runtime_error("Duplicate good id: " + id);
+            throw std::runtime_error("Duplicate catalog id: " + id);
         }
-        catalog.good_index[id] = static_cast<int>(i);
+        catalog.good_index[id] = index++;
     }
-    catalog.good_count = static_cast<unsigned int>(goods.size());
-
-    for (std::size_t i = 0; i < goods.size(); ++i) {
-        const auto& row = goods[i];
-        catalog.category[i] = ParseCategory(row.at("category").get<std::string>());
-        catalog.utility[i] = row.at("utility").get<float>();
-        catalog.default_price[i] = row.value("default_price", 1.0f);
-        catalog.flags[i] = row.value("tradeable", true) ? kGoodFlagTradeable : 0u;
-        catalog.complement[i] = kNoComplementGood;
-        if (row.contains("complement")) {
-            catalog.complement[i] = ResolveGoodIndex(catalog, row.at("complement").get<std::string>());
+    for (std::size_t i = 0; i < services.size(); ++i) {
+        const std::string id = services[i].at("id").get<std::string>();
+        if (catalog.good_index.contains(id)) {
+            throw std::runtime_error("Duplicate catalog id: " + id);
         }
+        catalog.good_index[id] = index++;
+    }
+
+    index = 0;
+    for (std::size_t i = 0; i < goods.size(); ++i) {
+        ParseCatalogEntry(goods[i], catalog, index++, kKindGood);
+    }
+    for (std::size_t i = 0; i < services.size(); ++i) {
+        ParseCatalogEntry(services[i], catalog, index++, kKindService);
     }
 
     const auto& recipes = root.at("recipes");
@@ -189,20 +225,29 @@ SimulationCatalog LoadSimulationCatalog(const std::filesystem::path& path) {
         catalog.credit_min_fruit = catalog.roundabout_input1_qty[0];
     }
 
-    std::printf("Loaded catalog %s: %u goods, %u recipes, %u roundabout stages\n",
-        path.string().c_str(), catalog.good_count, catalog.recipe_count, catalog.roundabout_recipe_count);
+    std::printf(
+        "Loaded catalog %s: %u goods, %u services, %u recipes, %u roundabout stages\n",
+        path.string().c_str(),
+        catalog.goods_count,
+        catalog.services_count,
+        catalog.recipe_count,
+        catalog.roundabout_recipe_count);
     return catalog;
 }
 
 void UploadCatalogToEnvironment(flamegpu::EnvironmentDescription& env, const SimulationCatalog& catalog) {
     env.newProperty<unsigned int>("GOOD_COUNT", catalog.good_count);
+    env.newProperty<unsigned int>("GOODS_COUNT", catalog.goods_count);
+    env.newProperty<unsigned int>("SERVICES_COUNT", catalog.services_count);
     env.newProperty<unsigned int>("RECIPE_COUNT", catalog.recipe_count);
     env.newProperty<unsigned int>("ROUNDABOUT_RECIPE_COUNT", catalog.roundabout_recipe_count);
     env.newProperty<int>("FOOD_RECIPE_INDEX", catalog.food_recipe_index);
     env.newProperty<int>("CREDIT_MIN_GRAIN", catalog.credit_min_grain);
     env.newProperty<int>("CREDIT_MIN_FRUIT", catalog.credit_min_fruit);
 
+    env.newProperty<int, kMaxGoods>("GOOD_KIND", catalog.kind);
     env.newProperty<int, kMaxGoods>("GOOD_CATEGORY", catalog.category);
+    env.newProperty<int, kMaxGoods>("GOOD_DECAY", catalog.decay_per_step);
     env.newProperty<float, kMaxGoods>("GOOD_UTILITY", catalog.utility);
     env.newProperty<unsigned int, kMaxGoods>("GOOD_FLAGS", catalog.flags);
     env.newProperty<int, kMaxGoods>("GOOD_COMPLEMENT", catalog.complement);

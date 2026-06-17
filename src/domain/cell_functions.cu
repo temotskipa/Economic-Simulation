@@ -1,5 +1,6 @@
 #include "flamegpu/flamegpu.h"
 
+#include "data/catalog_env.cuh"
 #include "data/constants.cuh"
 #include "data/goods_catalog.cuh"
 #include "data/region.cuh"
@@ -42,6 +43,9 @@ FLAMEGPU_AGENT_FUNCTION_DEF(MetaboliseAndGrowback, flamegpu::MessageNone, flameg
             if (InventoryGet(FLAMEGPU, kGoodFood) > 0) {
                 InventoryAdd(FLAMEGPU, kGoodFood, -1);
                 metabolism -= kFoodMetabolismValue;
+            } else if (InventoryGet(FLAMEGPU, kSvcHealthcare) > 0) {
+                InventoryAdd(FLAMEGPU, kSvcHealthcare, -1);
+                metabolism -= kHealthcareMetabolismValue;
             } else if (InventoryGet(FLAMEGPU, kGoodGrain) > 0) {
                 InventoryAdd(FLAMEGPU, kGoodGrain, -1);
                 --metabolism;
@@ -53,6 +57,17 @@ FLAMEGPU_AGENT_FUNCTION_DEF(MetaboliseAndGrowback, flamegpu::MessageNone, flameg
             }
         }
         if (metabolism < 0) metabolism = 0;
+
+        const unsigned int catalog_count = CatalogGoodCount(FLAMEGPU);
+        for (unsigned int good = 0u; good < catalog_count; ++good) {
+            if (!CatalogIsService(FLAMEGPU, static_cast<int>(good))) continue;
+            const int decay = CatalogGoodDecay(FLAMEGPU, static_cast<int>(good));
+            if (decay <= 0) continue;
+            const int held = InventoryGet(FLAMEGPU, static_cast<int>(good));
+            if (held <= 0) continue;
+            const int remaining = held - decay;
+            InventorySet(FLAMEGPU, static_cast<int>(good), remaining > 0 ? remaining : 0);
+        }
 
         const bool destitute =
             InventoryGet(FLAMEGPU, kGoodGrain) <= 0

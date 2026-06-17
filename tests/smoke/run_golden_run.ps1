@@ -56,6 +56,12 @@ try {
     }
     if (-not $hasInvestment) { throw "Golden run produced no capital investment" }
 
+    $hasServices = $false
+    foreach ($line in $lines) {
+        if ($line -match '"total_svc":([1-9][0-9]*)') { $hasServices = $true }
+    }
+    if (-not $hasServices) { throw "Golden run produced no services inventory" }
+
     $hasIndustrialGoods = $false
     foreach ($line in $lines) {
         if ($line -match '"total_ind":([1-9][0-9]*)') { $hasIndustrialGoods = $true }

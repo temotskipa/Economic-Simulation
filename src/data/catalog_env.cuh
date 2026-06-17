@@ -6,6 +6,9 @@
 namespace austrian_abm {
 
 #define CatalogGoodCount(api) ((api)->environment.getProperty<unsigned int>("GOOD_COUNT"))
+#define CatalogGoodKind(api, g) ((api)->environment.getProperty<int, kMaxGoods>("GOOD_KIND", (g)))
+#define CatalogGoodDecay(api, g) ((api)->environment.getProperty<int, kMaxGoods>("GOOD_DECAY", (g)))
+#define CatalogIsService(api, g) (CatalogGoodKind((api), (g)) == kKindService)
 #define CatalogGoodCategory(api, g) ((api)->environment.getProperty<int, kMaxGoods>("GOOD_CATEGORY", (g)))
 #define CatalogGoodUtility(api, g) ((api)->environment.getProperty<float, kMaxGoods>("GOOD_UTILITY", (g)))
 #define CatalogGoodFlags(api, g) ((api)->environment.getProperty<unsigned int, kMaxGoods>("GOOD_FLAGS", (g)))

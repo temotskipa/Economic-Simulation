@@ -19,11 +19,16 @@ struct SimulationCatalog {
     int credit_min_grain = 1;
     int credit_min_fruit = 1;
 
+    unsigned int goods_count = 0u;
+    unsigned int services_count = 0u;
+
+    std::array<int, kMaxGoods> kind{};
     std::array<int, kMaxGoods> category{};
     std::array<float, kMaxGoods> utility{};
     std::array<unsigned int, kMaxGoods> flags{};
     std::array<int, kMaxGoods> complement{};
     std::array<float, kMaxGoods> default_price{};
+    std::array<int, kMaxGoods> decay_per_step{};
 
     std::array<int, kMaxRecipes> recipe_output_good{};
     std::array<int, kMaxRecipes> recipe_output_qty{};

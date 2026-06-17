@@ -67,6 +67,7 @@ void AppendMarketHistory(const MarketStepMetrics& metrics) {
         << ",\"total_res\":" << metrics.total_res
         << ",\"total_ind\":" << metrics.total_ind
         << ",\"total_tech\":" << metrics.total_tech
+        << ",\"total_svc\":" << metrics.total_svc
         << ",\"production_count\":" << metrics.production_count
         << ",\"producer_count\":" << metrics.producer_count
         << ",\"total_capital\":" << metrics.total_capital

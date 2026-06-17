@@ -21,6 +21,7 @@ struct MarketStepMetrics {
     long long total_res = 0;
     long long total_ind = 0;
     long long total_tech = 0;
+    long long total_svc = 0;
     unsigned int production_count = 0u;
     unsigned int producer_count = 0u;
     long long total_capital = 0;

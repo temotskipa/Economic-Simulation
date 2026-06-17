@@ -35,6 +35,7 @@ constexpr int kActivityHarvest = 0;
 constexpr int kActivityProduce = 1;
 
 constexpr int kFoodMetabolismValue = 3;
+constexpr int kHealthcareMetabolismValue = 2;
 constexpr float kFoodValueMultiplier = 1.5f;
 constexpr float kMinProductionSkill = 0.3f;
 constexpr float kMaxProductionSkill = 1.0f;

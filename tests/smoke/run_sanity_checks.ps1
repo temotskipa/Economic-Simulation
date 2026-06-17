@@ -17,7 +17,7 @@ if (-not (Test-Path $JsonlPath)) {
 $requiredFields = @(
     "step", "avg_price", "trades_count", "trade_volume", "wealth_gini",
     "population", "total_sugar", "total_spice", "total_food",
-    "total_res", "total_ind", "total_tech",
+    "total_res", "total_ind", "total_tech", "total_svc",
     "production_count", "total_capital", "credit_created",
     "effective_rate", "price_dispersion_grain", "arbitrage_signals"
 )

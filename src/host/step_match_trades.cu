@@ -157,6 +157,7 @@ FLAMEGPU_STEP_FUNCTION(LogMarketStep) {
     long long total_res = 0;
     long long total_ind = 0;
     long long total_tech = 0;
+    long long total_svc = 0;
     unsigned int population_count = 0u;
     unsigned int production_count = 0u;
     unsigned int producer_count = 0u;
@@ -179,11 +180,15 @@ FLAMEGPU_STEP_FUNCTION(LogMarketStep) {
         const unsigned int log_good_count = CatalogGoodCount(FLAMEGPU);
         for (unsigned int good = 0u; good < log_good_count; ++good) {
             const long long qty = cell.getVariable<int, kMaxGoods>("inventory", good);
-            switch (CatalogGoodCategory(FLAMEGPU, static_cast<int>(good))) {
-                case kCategoryRes: total_res += qty; break;
-                case kCategoryIndustrial: total_ind += qty; break;
-                case kCategoryTech: total_tech += qty; break;
-                default: break;
+            if (CatalogIsService(FLAMEGPU, static_cast<int>(good))) {
+                total_svc += qty;
+            } else {
+                switch (CatalogGoodCategory(FLAMEGPU, static_cast<int>(good))) {
+                    case kCategoryRes: total_res += qty; break;
+                    case kCategoryIndustrial: total_ind += qty; break;
+                    case kCategoryTech: total_tech += qty; break;
+                    default: break;
+                }
             }
         }
         total_grain += cell.getVariable<int, kMaxGoods>("inventory", kGoodGrain);
@@ -273,6 +278,7 @@ FLAMEGPU_STEP_FUNCTION(LogMarketStep) {
     metrics.total_res = total_res;
     metrics.total_ind = total_ind;
     metrics.total_tech = total_tech;
+    metrics.total_svc = total_svc;
     metrics.investment_count = investment_count;
     metrics.roundabout_count = roundabout_count;
     metrics.capital_owner_count = capital_owner_count;
