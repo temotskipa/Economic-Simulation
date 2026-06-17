@@ -28,6 +28,13 @@ flamegpu::AgentDescription MakeCoreCell(flamegpu::ModelDescription& model) {
     cell.newVariable<float>("production_skill");
     cell.newVariable<int>("activity_mode");
     cell.newVariable<int>("step_production");
+    cell.newVariable<int>("capital_stock");
+    cell.newVariable<int>("intermediate_level");
+    cell.newVariable<float>("time_preference");
+    cell.newVariable<int>("production_stage");
+    cell.newVariable<int>("stage_progress");
+    cell.newVariable<int>("is_capital_owner");
+    cell.newVariable<int>("step_investment");
     return cell;
 }
 
@@ -49,6 +56,9 @@ void BuildModel(flamegpu::ModelDescription& model, const SimulationConfig& confi
     env.newProperty<float>("LAST_SPICE_PRICE", 1.0f);
     env.newProperty<unsigned int>("PRODUCTION_COUNT", 0u);
     env.newProperty<unsigned int>("PRODUCER_COUNT", 0u);
+    env.newProperty<unsigned int>("INVESTMENT_COUNT", 0u);
+    env.newProperty<unsigned int>("ROUNDABOUT_COUNT", 0u);
+    env.newProperty<long long>("TOTAL_CAPITAL", 0);
 
     flamegpu::ModelDescription movement_model("movement_model");
     {
@@ -71,6 +81,12 @@ void BuildModel(flamegpu::ModelDescription& model, const SimulationConfig& confi
             message.newVariable<int>("food_level");
             message.newVariable<float>("production_skill");
             message.newVariable<int>("activity_mode");
+            message.newVariable<int>("capital_stock");
+            message.newVariable<int>("intermediate_level");
+            message.newVariable<float>("time_preference");
+            message.newVariable<int>("production_stage");
+            message.newVariable<int>("stage_progress");
+            message.newVariable<int>("is_capital_owner");
             message.setDimensions(config.grid_width, config.grid_height);
         }
         {
@@ -110,6 +126,8 @@ void BuildModel(flamegpu::ModelDescription& model, const SimulationConfig& confi
     flamegpu::AgentDescription cell = MakeCoreCell(model);
     cell.newFunction("MetaboliseAndGrowback", MetaboliseAndGrowback);
     cell.newFunction("ChooseProductionActivity", ChooseProductionActivity);
+    cell.newFunction("InvestCapital", InvestCapital);
+    cell.newFunction("AdvanceRoundaboutProduction", AdvanceRoundaboutProduction);
     cell.newFunction("ProduceFood", ProduceFood);
     auto fn_trade = cell.newFunction("OutputTradeOffers", OutputTradeOffers);
     fn_trade.setMessageOutput("trade_offer");
@@ -121,8 +139,10 @@ void BuildModel(flamegpu::ModelDescription& model, const SimulationConfig& confi
     model.newLayer("L1_MetaboliseAndGrowback").addAgentFunction(cell.getFunction("MetaboliseAndGrowback"));
     model.newLayer("L2_Movement").addSubModel(movement_sub);
     model.newLayer("L3_ChooseProductionActivity").addAgentFunction(cell.getFunction("ChooseProductionActivity"));
-    model.newLayer("L4_ProduceFood").addAgentFunction(cell.getFunction("ProduceFood"));
-    model.newLayer("L5_OutputTradeOffers").addAgentFunction(fn_trade);
+    model.newLayer("L4_InvestCapital").addAgentFunction(cell.getFunction("InvestCapital"));
+    model.newLayer("L5_AdvanceRoundaboutProduction").addAgentFunction(cell.getFunction("AdvanceRoundaboutProduction"));
+    model.newLayer("L6_ProduceFood").addAgentFunction(cell.getFunction("ProduceFood"));
+    model.newLayer("L7_OutputTradeOffers").addAgentFunction(fn_trade);
 
     model.addStepFunction(MatchTrades);
     model.addStepFunction(LogMarketStep);

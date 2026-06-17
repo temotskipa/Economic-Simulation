@@ -48,6 +48,11 @@ MarketStepMetrics ParseMarketLine(const std::string& line) {
     metrics.total_food = ParseJsonLong(line, "total_food");
     metrics.production_count = ParseJsonUint(line, "production_count");
     metrics.producer_count = ParseJsonUint(line, "producer_count");
+    metrics.total_capital = ParseJsonLong(line, "total_capital");
+    metrics.total_intermediate = ParseJsonLong(line, "total_intermediate");
+    metrics.investment_count = ParseJsonUint(line, "investment_count");
+    metrics.roundabout_count = ParseJsonUint(line, "roundabout_count");
+    metrics.capital_owner_count = ParseJsonUint(line, "capital_owner_count");
     return metrics;
 }
 
@@ -121,7 +126,9 @@ std::string BuildWealthHistogramSvg(const flamegpu::AgentVector& population) {
         wealth.push_back(cell.getVariable<float>("money")
             + static_cast<float>(cell.getVariable<int>("sugar_level"))
             + static_cast<float>(cell.getVariable<int>("spice_level"))
-            + static_cast<float>(cell.getVariable<int>("food_level")) * kFoodValueMultiplier);
+            + static_cast<float>(cell.getVariable<int>("food_level")) * kFoodValueMultiplier
+            + static_cast<float>(cell.getVariable<int>("capital_stock")) * kCapitalValuePerUnit
+            + static_cast<float>(cell.getVariable<int>("intermediate_level")) * kFoodValueMultiplier);
     }
     if (wealth.empty()) return "<p>No occupied agents for wealth histogram.</p>";
 
@@ -155,25 +162,30 @@ std::string BuildTradeChartSvg(const std::vector<MarketStepMetrics>& history) {
 
     unsigned int peak_trades = 1u;
     unsigned int peak_production = 1u;
+    long long peak_capital = 1;
     for (const auto& row : history) {
         peak_trades = std::max(peak_trades, row.trades_count);
         peak_production = std::max(peak_production, row.production_count);
+        peak_capital = std::max(peak_capital, row.total_capital);
     }
 
     std::ostringstream svg;
-    svg << "<svg viewBox=\"0 0 360 200\" xmlns=\"http://www.w3.org/2000/svg\">\n"
-        << "<title>Trades and production by step</title>\n";
+    svg << "<svg viewBox=\"0 0 360 220\" xmlns=\"http://www.w3.org/2000/svg\">\n"
+        << "<title>Trades, production, and capital by step</title>\n";
     const float step_w = 300.0f / static_cast<float>(history.size());
     for (size_t i = 0; i < history.size(); ++i) {
         const float x = 30.0f + static_cast<float>(i) * step_w;
-        const float trade_h = 80.0f * static_cast<float>(history[i].trades_count) / static_cast<float>(peak_trades);
-        const float prod_h = 80.0f * static_cast<float>(history[i].production_count) / static_cast<float>(peak_production);
-        svg << "<rect x=\"" << x << "\" y=\"" << (170.0f - trade_h)
-            << "\" width=\"" << (step_w * 0.45f) << "\" height=\"" << trade_h << "\" fill=\"#38bdf8\"/>\n";
-        svg << "<rect x=\"" << (x + step_w * 0.5f) << "\" y=\"" << (170.0f - prod_h)
-            << "\" width=\"" << (step_w * 0.45f) << "\" height=\"" << prod_h << "\" fill=\"#f59e0b\"/>\n";
+        const float trade_h = 60.0f * static_cast<float>(history[i].trades_count) / static_cast<float>(peak_trades);
+        const float prod_h = 60.0f * static_cast<float>(history[i].production_count) / static_cast<float>(peak_production);
+        const float cap_h = 60.0f * static_cast<float>(history[i].total_capital) / static_cast<float>(peak_capital);
+        svg << "<rect x=\"" << x << "\" y=\"" << (190.0f - trade_h)
+            << "\" width=\"" << (step_w * 0.28f) << "\" height=\"" << trade_h << "\" fill=\"#38bdf8\"/>\n";
+        svg << "<rect x=\"" << (x + step_w * 0.34f) << "\" y=\"" << (190.0f - prod_h)
+            << "\" width=\"" << (step_w * 0.28f) << "\" height=\"" << prod_h << "\" fill=\"#f59e0b\"/>\n";
+        svg << "<rect x=\"" << (x + step_w * 0.68f) << "\" y=\"" << (190.0f - cap_h)
+            << "\" width=\"" << (step_w * 0.28f) << "\" height=\"" << cap_h << "\" fill=\"#a78bfa\"/>\n";
     }
-    svg << "<text x=\"30\" y=\"190\" fill=\"#94a3b8\" font-size=\"10\">blue=trades orange=production</text>\n"
+    svg << "<text x=\"30\" y=\"210\" fill=\"#94a3b8\" font-size=\"10\">blue=trades orange=production purple=capital</text>\n"
         << "</svg>\n";
     return svg.str();
 }
@@ -226,6 +238,9 @@ void WriteSimulationReport(
          << "<div class=\"card\"><div class=\"stat\">Final trades</div><div class=\"val\">" << last.trades_count << "</div></div>\n"
          << "<div class=\"card\"><div class=\"stat\">Food produced (last step)</div><div class=\"val\">" << last.production_count << "</div></div>\n"
          << "<div class=\"card\"><div class=\"stat\">Active producers</div><div class=\"val\">" << last.producer_count << "</div></div>\n"
+         << "<div class=\"card\"><div class=\"stat\">Total capital stock</div><div class=\"val\">" << last.total_capital << "</div></div>\n"
+         << "<div class=\"card\"><div class=\"stat\">Capital owners</div><div class=\"val\">" << last.capital_owner_count << "</div></div>\n"
+         << "<div class=\"card\"><div class=\"stat\">Roundabout producers</div><div class=\"val\">" << last.roundabout_count << "</div></div>\n"
          << "</div>\n"
          << "<div class=\"card\"><h2>Wealth Distribution</h2>" << wealth_hist << "</div>\n"
          << "<div class=\"card\"><h2>Trade Network Activity</h2>" << trade_chart << "</div>\n"

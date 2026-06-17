@@ -55,6 +55,12 @@ FLAMEGPU_AGENT_FUNCTION_DEF(MovementRequest, flamegpu::MessageArray2D, flamegpu:
     FLAMEGPU->message_out.setVariable<int>("food_level", FLAMEGPU->getVariable<int>("food_level"));
     FLAMEGPU->message_out.setVariable<float>("production_skill", FLAMEGPU->getVariable<float>("production_skill"));
     FLAMEGPU->message_out.setVariable<int>("activity_mode", FLAMEGPU->getVariable<int>("activity_mode"));
+    FLAMEGPU->message_out.setVariable<int>("capital_stock", FLAMEGPU->getVariable<int>("capital_stock"));
+    FLAMEGPU->message_out.setVariable<int>("intermediate_level", FLAMEGPU->getVariable<int>("intermediate_level"));
+    FLAMEGPU->message_out.setVariable<float>("time_preference", FLAMEGPU->getVariable<float>("time_preference"));
+    FLAMEGPU->message_out.setVariable<int>("production_stage", FLAMEGPU->getVariable<int>("production_stage"));
+    FLAMEGPU->message_out.setVariable<int>("stage_progress", FLAMEGPU->getVariable<int>("stage_progress"));
+    FLAMEGPU->message_out.setVariable<int>("is_capital_owner", FLAMEGPU->getVariable<int>("is_capital_owner"));
     FLAMEGPU->message_out.setIndex(agent_x, agent_y);
     return flamegpu::ALIVE;
 }
@@ -69,6 +75,12 @@ FLAMEGPU_AGENT_FUNCTION_DEF(MovementResponse, flamegpu::MessageArray2D, flamegpu
     int best_request_food_level = 0;
     float best_request_production_skill = 0.0f;
     int best_request_activity_mode = kActivityHarvest;
+    int best_request_capital_stock = 0;
+    int best_request_intermediate_level = 0;
+    float best_request_time_preference = kMaxTimePreference;
+    int best_request_production_stage = kProductionStageIdle;
+    int best_request_stage_progress = 0;
+    int best_request_is_capital_owner = 0;
 
     int status = FLAMEGPU->getVariable<int>("status");
     const flamegpu::id_t location_id = FLAMEGPU->getID();
@@ -89,6 +101,12 @@ FLAMEGPU_AGENT_FUNCTION_DEF(MovementResponse, flamegpu::MessageArray2D, flamegpu
                 best_request_food_level = current_message.getVariable<int>("food_level");
                 best_request_production_skill = current_message.getVariable<float>("production_skill");
                 best_request_activity_mode = current_message.getVariable<int>("activity_mode");
+                best_request_capital_stock = current_message.getVariable<int>("capital_stock");
+                best_request_intermediate_level = current_message.getVariable<int>("intermediate_level");
+                best_request_time_preference = current_message.getVariable<float>("time_preference");
+                best_request_production_stage = current_message.getVariable<int>("production_stage");
+                best_request_stage_progress = current_message.getVariable<int>("stage_progress");
+                best_request_is_capital_owner = current_message.getVariable<int>("is_capital_owner");
             }
         }
     }
@@ -105,6 +123,12 @@ FLAMEGPU_AGENT_FUNCTION_DEF(MovementResponse, flamegpu::MessageArray2D, flamegpu
         FLAMEGPU->setVariable<int>("food_level", best_request_food_level);
         FLAMEGPU->setVariable<float>("production_skill", best_request_production_skill);
         FLAMEGPU->setVariable<int>("activity_mode", best_request_activity_mode);
+        FLAMEGPU->setVariable<int>("capital_stock", best_request_capital_stock);
+        FLAMEGPU->setVariable<int>("intermediate_level", best_request_intermediate_level);
+        FLAMEGPU->setVariable<float>("time_preference", best_request_time_preference);
+        FLAMEGPU->setVariable<int>("production_stage", best_request_production_stage);
+        FLAMEGPU->setVariable<int>("stage_progress", best_request_stage_progress);
+        FLAMEGPU->setVariable<int>("is_capital_owner", best_request_is_capital_owner);
         FLAMEGPU->setVariable<int>("env_sugar_level", -1);
         FLAMEGPU->setVariable<int>("env_spice_level", -1);
     }
@@ -132,6 +156,13 @@ FLAMEGPU_AGENT_FUNCTION_DEF(MovementTransaction, flamegpu::MessageArray2D, flame
             FLAMEGPU->setVariable<int>("food_level", 0);
             FLAMEGPU->setVariable<int>("activity_mode", kActivityHarvest);
             FLAMEGPU->setVariable<int>("step_production", 0);
+            FLAMEGPU->setVariable<int>("capital_stock", 0);
+            FLAMEGPU->setVariable<int>("intermediate_level", 0);
+            FLAMEGPU->setVariable<float>("time_preference", kMaxTimePreference);
+            FLAMEGPU->setVariable<int>("production_stage", kProductionStageIdle);
+            FLAMEGPU->setVariable<int>("stage_progress", 0);
+            FLAMEGPU->setVariable<int>("is_capital_owner", 0);
+            FLAMEGPU->setVariable<int>("step_investment", 0);
             FLAMEGPU->setVariable<int>("env_sugar_level", 0);
             FLAMEGPU->setVariable<int>("env_spice_level", 0);
         }

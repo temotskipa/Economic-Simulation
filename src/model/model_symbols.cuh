@@ -10,6 +10,8 @@ FLAMEGPU_AGENT_FUNCTION_DECL(MovementRequest, flamegpu::MessageArray2D, flamegpu
 FLAMEGPU_AGENT_FUNCTION_DECL(MovementResponse, flamegpu::MessageArray2D, flamegpu::MessageArray2D);
 FLAMEGPU_AGENT_FUNCTION_DECL(MovementTransaction, flamegpu::MessageArray2D, flamegpu::MessageNone);
 FLAMEGPU_AGENT_FUNCTION_DECL(ChooseProductionActivity, flamegpu::MessageNone, flamegpu::MessageNone);
+FLAMEGPU_AGENT_FUNCTION_DECL(InvestCapital, flamegpu::MessageNone, flamegpu::MessageNone);
+FLAMEGPU_AGENT_FUNCTION_DECL(AdvanceRoundaboutProduction, flamegpu::MessageNone, flamegpu::MessageNone);
 FLAMEGPU_AGENT_FUNCTION_DECL(ProduceFood, flamegpu::MessageNone, flamegpu::MessageNone);
 FLAMEGPU_AGENT_FUNCTION_DECL(OutputTradeOffers, flamegpu::MessageNone, flamegpu::MessageBruteForce);
 

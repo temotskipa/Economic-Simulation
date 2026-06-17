@@ -39,4 +39,27 @@ constexpr float kFoodValueMultiplier = 1.5f;
 constexpr float kMinProductionSkill = 0.3f;
 constexpr float kMaxProductionSkill = 1.0f;
 
+constexpr int kActivityRoundabout = 2;
+constexpr int kActivityInvest = 3;
+
+constexpr int kProductionStageIdle = 0;
+constexpr int kProductionStageIntermediate = 1;
+constexpr int kProductionStageFinal = 2;
+
+constexpr int kIntermediateRecipeSugar = 1;
+constexpr int kIntermediateRecipeSpice = 1;
+constexpr int kFinalRecipeIntermediate = 1;
+
+constexpr int kDirectProductionPeriod = 1;
+constexpr int kRoundaboutIntermediatePeriod = 2;
+constexpr int kRoundaboutFinalPeriod = 3;
+
+constexpr float kCapitalEfficiencyPerUnit = 0.75f;
+constexpr float kCapitalUnitCost = 25.0f;
+constexpr float kCapitalValuePerUnit = 30.0f;
+constexpr float kRoundaboutFoodMultiplier = 2.0f;
+constexpr float kMinTimePreference = 0.02f;
+constexpr float kMaxTimePreference = 0.35f;
+constexpr float kCapitalOwnerMaxTimePreference = 0.15f;
+
 }  // namespace austrian_abm

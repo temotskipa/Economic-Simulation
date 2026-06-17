@@ -20,8 +20,12 @@ float ComputeWealthGini(flamegpu::DeviceAgentVector& population) {
         const int sugar = cell.getVariable<int>("sugar_level");
         const int spice = cell.getVariable<int>("spice_level");
         const int food = cell.getVariable<int>("food_level");
+        const int capital = cell.getVariable<int>("capital_stock");
+        const int intermediate = cell.getVariable<int>("intermediate_level");
         wealth.push_back(money + static_cast<float>(sugar) + static_cast<float>(spice)
-            + static_cast<float>(food) * kFoodValueMultiplier);
+            + static_cast<float>(food) * kFoodValueMultiplier
+            + static_cast<float>(capital) * kCapitalValuePerUnit
+            + static_cast<float>(intermediate) * kFoodValueMultiplier);
     }
     if (wealth.size() < 2u) return 0.0f;
 
@@ -57,6 +61,11 @@ void AppendMarketHistory(const MarketStepMetrics& metrics) {
         << ",\"total_food\":" << metrics.total_food
         << ",\"production_count\":" << metrics.production_count
         << ",\"producer_count\":" << metrics.producer_count
+        << ",\"total_capital\":" << metrics.total_capital
+        << ",\"total_intermediate\":" << metrics.total_intermediate
+        << ",\"investment_count\":" << metrics.investment_count
+        << ",\"roundabout_count\":" << metrics.roundabout_count
+        << ",\"capital_owner_count\":" << metrics.capital_owner_count
         << "}\n";
 }
 

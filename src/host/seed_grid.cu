@@ -23,6 +23,7 @@ FLAMEGPU_INIT_FUNCTION(SeedGrid) {
     std::uniform_int_distribution<int> agent_spice_dist(0, kSpiceMaxCapacity * 2);
     std::uniform_int_distribution<int> poor_env_dist(0, kSugarMaxCapacity / 2);
     std::uniform_real_distribution<float> skill_dist(kMinProductionSkill, kMaxProductionSkill);
+    std::uniform_real_distribution<float> time_pref_dist(kMinTimePreference, kMaxTimePreference);
 
     std::vector<std::array<unsigned int, 4>> hotspots;
     {
@@ -56,6 +57,13 @@ FLAMEGPU_INIT_FUNCTION(SeedGrid) {
                 instance.setVariable<float>("production_skill", skill_dist(rng));
                 instance.setVariable<int>("activity_mode", kActivityHarvest);
                 instance.setVariable<int>("step_production", 0);
+                instance.setVariable<int>("capital_stock", 0);
+                instance.setVariable<int>("intermediate_level", 0);
+                instance.setVariable<float>("time_preference", time_pref_dist(rng));
+                instance.setVariable<int>("production_stage", kProductionStageIdle);
+                instance.setVariable<int>("stage_progress", 0);
+                instance.setVariable<int>("is_capital_owner", 0);
+                instance.setVariable<int>("step_investment", 0);
             } else {
                 instance.setVariable<int>("agent_id", -1);
                 instance.setVariable<int>("status", kAgentStatusUnoccupied);
@@ -67,6 +75,13 @@ FLAMEGPU_INIT_FUNCTION(SeedGrid) {
                 instance.setVariable<float>("production_skill", 0.0f);
                 instance.setVariable<int>("activity_mode", kActivityHarvest);
                 instance.setVariable<int>("step_production", 0);
+                instance.setVariable<int>("capital_stock", 0);
+                instance.setVariable<int>("intermediate_level", 0);
+                instance.setVariable<float>("time_preference", kMaxTimePreference);
+                instance.setVariable<int>("production_stage", kProductionStageIdle);
+                instance.setVariable<int>("stage_progress", 0);
+                instance.setVariable<int>("is_capital_owner", 0);
+                instance.setVariable<int>("step_investment", 0);
             }
 
             unsigned int env_sugar = 0u;

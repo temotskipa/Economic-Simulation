@@ -46,6 +46,16 @@ try {
     }
     if (-not $hasProduction) { throw "Golden run produced no food production" }
 
+    $hasCapitalGrowth = $false
+    if ($lines.Count -ge 2) {
+        $firstCapital = 0
+        $lastCapital = 0
+        if ($lines[0] -match '"total_capital":(\d+)') { $firstCapital = [int]$Matches[1] }
+        if ($lines[-1] -match '"total_capital":(\d+)') { $lastCapital = [int]$Matches[1] }
+        if ($lastCapital -gt $firstCapital) { $hasCapitalGrowth = $true }
+    }
+    if (-not $hasCapitalGrowth) { throw "Golden run did not show capital stock growth" }
+
     $Html = Join-Path $ReportDir "austrian_abm_report.html"
     if (-not (Test-Path $Html)) { throw "Missing austrian_abm_report.html" }
 

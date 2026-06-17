@@ -159,25 +159,44 @@ FLAMEGPU_STEP_FUNCTION(LogMarketStep) {
     long long total_sugar = 0;
     long long total_spice = 0;
     long long total_food = 0;
+    long long total_capital = 0;
+    long long total_intermediate = 0;
     unsigned int population_count = 0u;
     unsigned int production_count = 0u;
     unsigned int producer_count = 0u;
+    unsigned int investment_count = 0u;
+    unsigned int roundabout_count = 0u;
+    unsigned int capital_owner_count = 0u;
     for (const auto& cell : population) {
         if (cell.getVariable<int>("status") != kAgentStatusOccupied) continue;
         ++population_count;
         total_sugar += cell.getVariable<int>("sugar_level");
         total_spice += cell.getVariable<int>("spice_level");
         total_food += cell.getVariable<int>("food_level");
+        total_capital += cell.getVariable<int>("capital_stock");
+        total_intermediate += cell.getVariable<int>("intermediate_level");
         if (cell.getVariable<int>("step_production") > 0) {
             ++production_count;
         }
-        if (cell.getVariable<int>("activity_mode") == kActivityProduce) {
+        if (cell.getVariable<int>("step_investment") > 0) {
+            ++investment_count;
+        }
+        const int activity_mode = cell.getVariable<int>("activity_mode");
+        if (activity_mode == kActivityProduce) {
             ++producer_count;
+        } else if (activity_mode == kActivityRoundabout) {
+            ++roundabout_count;
+        }
+        if (cell.getVariable<int>("is_capital_owner") > 0) {
+            ++capital_owner_count;
         }
     }
 
     FLAMEGPU->environment.setProperty<unsigned int>("PRODUCTION_COUNT", production_count);
     FLAMEGPU->environment.setProperty<unsigned int>("PRODUCER_COUNT", producer_count);
+    FLAMEGPU->environment.setProperty<unsigned int>("INVESTMENT_COUNT", investment_count);
+    FLAMEGPU->environment.setProperty<unsigned int>("ROUNDABOUT_COUNT", roundabout_count);
+    FLAMEGPU->environment.setProperty<long long>("TOTAL_CAPITAL", total_capital);
 
     MarketStepMetrics metrics;
     metrics.step = FLAMEGPU->getStepCounter();
@@ -191,11 +210,16 @@ FLAMEGPU_STEP_FUNCTION(LogMarketStep) {
     metrics.total_food = total_food;
     metrics.production_count = production_count;
     metrics.producer_count = producer_count;
+    metrics.total_capital = total_capital;
+    metrics.total_intermediate = total_intermediate;
+    metrics.investment_count = investment_count;
+    metrics.roundabout_count = roundabout_count;
+    metrics.capital_owner_count = capital_owner_count;
     AppendMarketHistory(metrics);
 
-    if (production_count > 0u) {
-        std::printf("production=%u producers=%u total_food=%lld\n",
-            production_count, producer_count, total_food);
+    if (production_count > 0u || investment_count > 0u) {
+        std::printf("production=%u investment=%u roundabout=%u total_capital=%lld total_food=%lld\n",
+            production_count, investment_count, roundabout_count, total_capital, total_food);
     }
 }
 
