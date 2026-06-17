@@ -1,7 +1,10 @@
 #pragma once
 
+#include <array>
 #include <filesystem>
 #include <string>
+
+#include "data/constants.cuh"
 
 namespace austrian_abm {
 
@@ -16,6 +19,8 @@ struct SimulationConfig {
     float natural_rate = 0.08f;
     float policy_rate = 0.02f;
     unsigned int rate_shock_step = 6u;
+    float trade_radius = kDefaultTradeRadius;
+    std::array<float, kMaxRegions> region_productivity = {0.8f, 1.1f, 1.0f, 1.4f};
 };
 
 std::string SanitizeEnvForLog(const char* raw);

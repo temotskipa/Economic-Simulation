@@ -7,6 +7,7 @@
 
 #include "data/constants.cuh"
 #include "data/goods_catalog.cuh"
+#include "data/region.cuh"
 #include "model/model_symbols.cuh"
 
 namespace austrian_abm {
@@ -135,6 +136,7 @@ FLAMEGPU_INIT_FUNCTION(SeedGrid) {
                 instance.setVariable<float>("deposit_balance", 0.0f);
                 instance.setVariable<float>("loan_rate", 0.0f);
                 instance.setVariable<int>("step_loan", 0);
+                instance.setVariable<int>("arbitrage_signals", 0);
             } else {
                 instance.setVariable<int>("agent_id", -1);
                 instance.setVariable<int>("status", kAgentStatusUnoccupied);
@@ -153,12 +155,18 @@ FLAMEGPU_INIT_FUNCTION(SeedGrid) {
                 instance.setVariable<float>("deposit_balance", 0.0f);
                 instance.setVariable<float>("loan_rate", 0.0f);
                 instance.setVariable<int>("step_loan", 0);
+                instance.setVariable<int>("arbitrage_signals", 0);
             }
 
+            const float productivity = RegionProductivityAt(FLAMEGPU, x, y);
             unsigned int env_grain = ComputePatchLevel(x, y, grain_hotspots, 0u);
             unsigned int env_fruit = ComputePatchLevel(x, y, fruit_hotspots, 0u) / 2u;
             unsigned int env_iron = ComputePatchLevel(x, y, iron_hotspots, 0u);
             unsigned int env_coal = ComputePatchLevel(x, y, coal_hotspots, 0u);
+            env_grain = static_cast<unsigned int>(static_cast<float>(env_grain) * productivity);
+            env_fruit = static_cast<unsigned int>(static_cast<float>(env_fruit) * productivity);
+            env_iron = static_cast<unsigned int>(static_cast<float>(env_iron) * productivity);
+            env_coal = static_cast<unsigned int>(static_cast<float>(env_coal) * productivity);
 
             if (env_grain < kSugarMaxCapacity / 2u) {
                 env_grain = static_cast<unsigned int>(poor_env_dist(rng));

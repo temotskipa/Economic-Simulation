@@ -44,6 +44,7 @@ SET(ALL_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/constants.cuh
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/goods_catalog.cuh
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/catalog_env.cuh
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/data/region.cuh
     ${CMAKE_CURRENT_SOURCE_DIR}/src/domain/inventory.cuh
     ${CMAKE_CURRENT_SOURCE_DIR}/src/io/catalog.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/domain/trade_functions.cuh

@@ -5,7 +5,9 @@
 #include "flamegpu/flamegpu.h"
 
 #include "data/catalog_env.cuh"
+#include "data/constants.cuh"
 #include "data/goods_catalog.cuh"
+#include "data/region.cuh"
 #include "domain/credit_functions.cuh"
 #include "host/step_log.h"
 #include "model/model_symbols.cuh"
@@ -162,6 +164,13 @@ FLAMEGPU_STEP_FUNCTION(LogMarketStep) {
     unsigned int roundabout_count = 0u;
     unsigned int capital_owner_count = 0u;
     unsigned int malinvestment_count = 0u;
+    unsigned int arbitrage_signals = 0u;
+    const unsigned int grid_width = FLAMEGPU->environment.getProperty<unsigned int>("GRID_WIDTH");
+    const unsigned int grid_height = FLAMEGPU->environment.getProperty<unsigned int>("GRID_HEIGHT");
+    float region_bid_sum[kMaxRegions] = {};
+    float region_ask_sum[kMaxRegions] = {};
+    unsigned int region_bid_count[kMaxRegions] = {};
+    unsigned int region_ask_count[kMaxRegions] = {};
     const unsigned int rate_suppressed =
         FLAMEGPU->environment.getProperty<unsigned int>("RATE_SUPPRESSED");
     for (const auto& cell : population) {
@@ -203,7 +212,42 @@ FLAMEGPU_STEP_FUNCTION(LogMarketStep) {
                 rate_suppressed)) {
             ++malinvestment_count;
         }
+        arbitrage_signals += static_cast<unsigned int>(cell.getVariable<int>("arbitrage_signals"));
+        const unsigned int pos_x = cell.getVariable<unsigned int, 2>("pos", 0);
+        const unsigned int pos_y = cell.getVariable<unsigned int, 2>("pos", 1);
+        const int region = ComputeRegionId(pos_x, pos_y, grid_width, grid_height);
+        if (region >= 0 && region < kMaxRegions) {
+            const float grain_bid = cell.getVariable<float, kMaxGoods>("bid_price", kGoodGrain);
+            const float grain_ask = cell.getVariable<float, kMaxGoods>("ask_price", kGoodGrain);
+            if (grain_bid > 0.0f) {
+                region_bid_sum[region] += grain_bid;
+                ++region_bid_count[region];
+            }
+            if (grain_ask > 0.0f) {
+                region_ask_sum[region] += grain_ask;
+                ++region_ask_count[region];
+            }
+        }
     }
+
+    float max_region_bid = 0.0f;
+    float min_region_ask = 0.0f;
+    bool have_region_ask = false;
+    for (int region = 0; region < kMaxRegions; ++region) {
+        if (region_bid_count[region] > 0u) {
+            const float avg_bid = region_bid_sum[region] / static_cast<float>(region_bid_count[region]);
+            max_region_bid = std::max(max_region_bid, avg_bid);
+        }
+        if (region_ask_count[region] > 0u) {
+            const float avg_ask = region_ask_sum[region] / static_cast<float>(region_ask_count[region]);
+            if (!have_region_ask || avg_ask < min_region_ask) {
+                min_region_ask = avg_ask;
+                have_region_ask = true;
+            }
+        }
+    }
+    const float price_dispersion_grain =
+        have_region_ask ? std::max(0.0f, max_region_bid - min_region_ask) : 0.0f;
 
     FLAMEGPU->environment.setProperty<unsigned int>("MALINVESTMENT_COUNT", malinvestment_count);
     FLAMEGPU->environment.setProperty<unsigned int>("PRODUCTION_COUNT", production_count);
@@ -237,6 +281,8 @@ FLAMEGPU_STEP_FUNCTION(LogMarketStep) {
     metrics.effective_rate = FLAMEGPU->environment.getProperty<float>("EFFECTIVE_RATE");
     metrics.rate_suppressed = rate_suppressed;
     metrics.malinvestment_count = malinvestment_count;
+    metrics.price_dispersion_grain = price_dispersion_grain;
+    metrics.arbitrage_signals = arbitrage_signals;
     AppendMarketHistory(metrics);
 
     if (production_count > 0u || investment_count > 0u || metrics.credit_created > 0u) {

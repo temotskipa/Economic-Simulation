@@ -39,6 +39,7 @@ flamegpu::AgentDescription MakeCoreCell(flamegpu::ModelDescription& model) {
     cell.newVariable<float>("deposit_balance");
     cell.newVariable<float>("loan_rate");
     cell.newVariable<int>("step_loan");
+    cell.newVariable<int>("arbitrage_signals");
     return cell;
 }
 
@@ -70,6 +71,8 @@ void BuildModel(
     env.newProperty<float>("TRADE_VOLUME", 0.0f);
     env.newProperty<float>("AVG_TRADE_PRICE", 0.0f);
     UploadCatalogToEnvironment(env, catalog);
+    env.newProperty<float>("TRADE_RADIUS", config.trade_radius);
+    env.newProperty<float, kMaxRegions>("REGION_PRODUCTIVITY", config.region_productivity);
     env.newProperty<unsigned int>("PRODUCTION_COUNT", 0u);
     env.newProperty<unsigned int>("PRODUCER_COUNT", 0u);
     env.newProperty<unsigned int>("INVESTMENT_COUNT", 0u);
@@ -141,12 +144,17 @@ void BuildModel(
     }
 
     {
-        auto message = model.newMessage<flamegpu::MessageBruteForce>("trade_offer");
+        auto message = model.newMessage<flamegpu::MessageSpatial2D>("trade_offer");
         message.newVariable<int>("agent_id");
         message.newVariable<int>("good");
         message.newVariable<int>("side");
         message.newVariable<float>("price");
         message.newVariable<int>("quantity");
+        message.setMin(0.0f, 0.0f);
+        message.setMax(
+            static_cast<float>(config.grid_width),
+            static_cast<float>(config.grid_height));
+        message.setRadius(config.trade_radius);
     }
 
     MakeBank(model);
@@ -159,6 +167,8 @@ void BuildModel(
     cell.newFunction("ProduceFromRecipes", ProduceFromRecipes);
     auto fn_trade = cell.newFunction("OutputTradeOffers", OutputTradeOffers);
     fn_trade.setMessageOutput("trade_offer");
+    auto fn_arbitrage = cell.newFunction("ScanSpatialArbitrage", ScanSpatialArbitrage);
+    fn_arbitrage.setMessageInput("trade_offer");
 
     flamegpu::SubModelDescription movement_sub =
         model.newSubModel("movement_conflict_resolution", movement_model);
@@ -172,6 +182,7 @@ void BuildModel(
     model.newLayer("L5_AdvanceRoundaboutProduction").addAgentFunction(cell.getFunction("AdvanceRoundaboutProduction"));
     model.newLayer("L6_ProduceFromRecipes").addAgentFunction(cell.getFunction("ProduceFromRecipes"));
     model.newLayer("L7_OutputTradeOffers").addAgentFunction(fn_trade);
+    model.newLayer("L7b_ScanSpatialArbitrage").addAgentFunction(fn_arbitrage);
 
     model.addStepFunction(MatchTrades);
     model.addStepFunction(LogMarketStep);

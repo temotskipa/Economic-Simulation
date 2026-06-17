@@ -2,6 +2,7 @@
 
 #include "data/constants.cuh"
 #include "data/goods_catalog.cuh"
+#include "data/region.cuh"
 #include "domain/inventory.cuh"
 #include "model/model_symbols.cuh"
 
@@ -70,20 +71,25 @@ FLAMEGPU_AGENT_FUNCTION_DEF(MetaboliseAndGrowback, flamegpu::MessageNone, flameg
     }
 
     if (status == kAgentStatusUnoccupied) {
+        const unsigned int cell_x = FLAMEGPU->getVariable<unsigned int, 2>("pos", 0);
+        const unsigned int cell_y = FLAMEGPU->getVariable<unsigned int, 2>("pos", 1);
+        const float productivity = RegionProductivityAt(FLAMEGPU, cell_x, cell_y);
+        int grow_delta = static_cast<int>(productivity + 0.5f);
+        if (grow_delta < 1) grow_delta = 1;
         if (env_sugar_level >= 0) {
-            env_sugar_level += kSugarGrowbackRate;
+            env_sugar_level += grow_delta;
             if (env_sugar_level > env_max_sugar_level) env_sugar_level = env_max_sugar_level;
         }
         if (env_spice_level >= 0) {
-            env_spice_level += kSpiceGrowbackRate;
+            env_spice_level += grow_delta;
             if (env_spice_level > env_max_spice_level) env_spice_level = env_max_spice_level;
         }
         if (env_iron_level >= 0) {
-            env_iron_level += kIronGrowbackRate;
+            env_iron_level += grow_delta;
             if (env_iron_level > env_max_iron_level) env_iron_level = env_max_iron_level;
         }
         if (env_coal_level >= 0) {
-            env_coal_level += kCoalGrowbackRate;
+            env_coal_level += grow_delta;
             if (env_coal_level > env_max_coal_level) env_coal_level = env_max_coal_level;
         }
     }

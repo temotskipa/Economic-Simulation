@@ -87,6 +87,7 @@ SimulationConfig ParseSimulationConfig(int argc, const char** argv) {
     config.natural_rate = ParseFloatEnv("AUSTRIAN_ABM_NATURAL_RATE", kDefaultNaturalRate);
     config.policy_rate = ParseFloatEnv("AUSTRIAN_ABM_POLICY_RATE", kDefaultPolicyRate);
     config.rate_shock_step = ParseUnsignedEnv("AUSTRIAN_ABM_RATE_SHOCK_STEP", kDefaultRateShockStep);
+    config.trade_radius = ParseFloatEnv("AUSTRIAN_ABM_TRADE_RADIUS", kDefaultTradeRadius);
 
     for (int i = 1; i < argc; ++i) {
         if (std::strcmp(argv[i], "--steps") == 0 && i + 1 < argc) {

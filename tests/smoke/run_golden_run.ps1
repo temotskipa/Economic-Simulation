@@ -92,6 +92,15 @@ try {
         throw "Rate shock did not raise effective_rate (pre=$preShockRate post=$postShockRate)"
     }
 
+    $hasDispersion = $false
+    $hasArbitrage = $false
+    foreach ($line in $lines) {
+        if ($line -match '"price_dispersion_grain":([1-9][0-9]*\.?[0-9]*)') { $hasDispersion = $true }
+        if ($line -match '"arbitrage_signals":([1-9][0-9]*)') { $hasArbitrage = $true }
+    }
+    if (-not $hasDispersion) { throw "Golden run produced no regional grain price dispersion" }
+    if (-not $hasArbitrage) { throw "Golden run produced no spatial arbitrage signals" }
+
     $Html = Join-Path $ReportDir "austrian_abm_report.html"
     if (-not (Test-Path $Html)) { throw "Missing austrian_abm_report.html" }
 

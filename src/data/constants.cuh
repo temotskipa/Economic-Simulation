@@ -74,4 +74,7 @@ constexpr float kDepositThreshold = 50.0f;
 constexpr float kDepositFraction = 0.3f;
 constexpr float kEntrepreneurMinSkill = 0.45f;
 
+constexpr int kMaxRegions = 4;
+constexpr float kDefaultTradeRadius = 24.0f;
+
 }  // namespace austrian_abm

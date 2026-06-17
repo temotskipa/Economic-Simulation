@@ -6,8 +6,10 @@
 #include <fstream>
 #include <vector>
 
+#include "data/catalog_env.cuh"
 #include "data/constants.cuh"
 #include "data/goods_catalog.cuh"
+#include "data/region.cuh"
 #include "io/config.h"
 
 namespace austrian_abm {
@@ -77,6 +79,8 @@ void AppendMarketHistory(const MarketStepMetrics& metrics) {
         << ",\"effective_rate\":" << metrics.effective_rate
         << ",\"rate_suppressed\":" << metrics.rate_suppressed
         << ",\"malinvestment_count\":" << metrics.malinvestment_count
+        << ",\"price_dispersion_grain\":" << metrics.price_dispersion_grain
+        << ",\"arbitrage_signals\":" << metrics.arbitrage_signals
         << "}\n";
 }
 

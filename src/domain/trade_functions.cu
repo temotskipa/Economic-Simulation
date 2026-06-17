@@ -9,7 +9,7 @@
 
 namespace austrian_abm {
 
-FLAMEGPU_AGENT_FUNCTION_DEF(OutputTradeOffers, flamegpu::MessageNone, flamegpu::MessageBruteForce) {
+FLAMEGPU_AGENT_FUNCTION_DEF(OutputTradeOffers, flamegpu::MessageNone, flamegpu::MessageSpatial2D) {
     const int status = FLAMEGPU->getVariable<int>("status");
     const unsigned int good_count = CatalogGoodCount(FLAMEGPU);
     if (status != kAgentStatusOccupied) {
@@ -64,8 +64,46 @@ FLAMEGPU_AGENT_FUNCTION_DEF(OutputTradeOffers, flamegpu::MessageNone, flamegpu::
         FLAMEGPU->message_out.setVariable<int>("side", best_side);
         FLAMEGPU->message_out.setVariable<float>("price", best_price);
         FLAMEGPU->message_out.setVariable<int>("quantity", 1);
+        FLAMEGPU->message_out.setLocation(
+            static_cast<float>(FLAMEGPU->getVariable<unsigned int, 2>("pos", 0)),
+            static_cast<float>(FLAMEGPU->getVariable<unsigned int, 2>("pos", 1)));
     }
 
+    return flamegpu::ALIVE;
+}
+
+FLAMEGPU_AGENT_FUNCTION_DEF(ScanSpatialArbitrage, flamegpu::MessageSpatial2D, flamegpu::MessageNone) {
+    const int status = FLAMEGPU->getVariable<int>("status");
+    if (status != kAgentStatusOccupied) {
+        FLAMEGPU->setVariable<int>("arbitrage_signals", 0);
+        return flamegpu::ALIVE;
+    }
+
+    const int self_id = FLAMEGPU->getVariable<int>("agent_id");
+    const float agent_x = static_cast<float>(FLAMEGPU->getVariable<unsigned int, 2>("pos", 0));
+    const float agent_y = static_cast<float>(FLAMEGPU->getVariable<unsigned int, 2>("pos", 1));
+    int signals = 0;
+
+    for (const auto& offer : FLAMEGPU->message_in(agent_x, agent_y)) {
+        const int offer_agent = offer.getVariable<int>("agent_id");
+        if (offer_agent == self_id) continue;
+        const int good = offer.getVariable<int>("good");
+        const int side = offer.getVariable<int>("side");
+        const float price = offer.getVariable<float>("price");
+        if (good < 0 || static_cast<unsigned int>(good) >= CatalogGoodCount(FLAMEGPU)) continue;
+        if (!CatalogIsTradeable(FLAMEGPU, good)) continue;
+
+        const float bid = BidPriceGet(FLAMEGPU, good);
+        const float ask = AskPriceGet(FLAMEGPU, good);
+        if (side == kTradeAsk && bid > price) {
+            ++signals;
+        } else if (side == kTradeBid && ask > 0.0f && ask < price
+            && InventoryGet(FLAMEGPU, good) > 0) {
+            ++signals;
+        }
+    }
+
+    FLAMEGPU->setVariable<int>("arbitrage_signals", signals);
     return flamegpu::ALIVE;
 }
 

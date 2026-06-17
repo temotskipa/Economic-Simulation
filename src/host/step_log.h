@@ -33,6 +33,8 @@ struct MarketStepMetrics {
     float effective_rate = 0.0f;
     unsigned int rate_suppressed = 0u;
     unsigned int malinvestment_count = 0u;
+    float price_dispersion_grain = 0.0f;
+    unsigned int arbitrage_signals = 0u;
 };
 
 void AppendMarketHistory(const MarketStepMetrics& metrics);
