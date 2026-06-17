@@ -52,8 +52,10 @@ FLAMEGPU_HOST_FUNCTION(ProcessBanking) {
             const int grain_level = cells[i].getVariable<int, kGoodCount>("inventory", kGoodGrain);
             const int fruit_level = cells[i].getVariable<int, kGoodCount>("inventory", kGoodFruit);
             const float loan_balance = cells[i].getVariable<float>("loan_balance");
+            const int min_grain = FLAMEGPU->environment.getProperty<int>("CREDIT_MIN_GRAIN");
+            const int min_fruit = FLAMEGPU->environment.getProperty<int>("CREDIT_MIN_FRUIT");
             if (!IsEntrepreneurEligibleForCredit(
-                    production_skill, grain_level, fruit_level, loan_balance)) {
+                    production_skill, grain_level, fruit_level, loan_balance, min_grain, min_fruit)) {
                 continue;
             }
 

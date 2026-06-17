@@ -1,6 +1,7 @@
 # Model output files
 *.xml
 *.json
+!data/vic3_catalog.json
 *.bin
 
 # Visualisation screenshots

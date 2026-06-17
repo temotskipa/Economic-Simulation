@@ -1,5 +1,6 @@
 #include "flamegpu/flamegpu.h"
 
+#include "data/catalog_env.cuh"
 #include "data/constants.cuh"
 #include "data/goods_catalog.cuh"
 #include "domain/inventory.cuh"
@@ -10,42 +11,49 @@ namespace austrian_abm {
 
 FLAMEGPU_AGENT_FUNCTION_DEF(OutputTradeOffers, flamegpu::MessageNone, flamegpu::MessageBruteForce) {
     const int status = FLAMEGPU->getVariable<int>("status");
+    const unsigned int good_count = CatalogGoodCount(FLAMEGPU);
     if (status != kAgentStatusOccupied) {
-        for (int good = 0; good < kGoodCount; ++good) {
-            BidPriceSet(FLAMEGPU, good, 0.0f);
-            AskPriceSet(FLAMEGPU, good, 0.0f);
+        for (unsigned int good = 0u; good < good_count; ++good) {
+            BidPriceSet(FLAMEGPU, static_cast<int>(good), 0.0f);
+            AskPriceSet(FLAMEGPU, static_cast<int>(good), 0.0f);
         }
         return flamegpu::ALIVE;
     }
 
     const float money = FLAMEGPU->getVariable<float>("money");
-    const int grain = InventoryGet(FLAMEGPU, kGoodGrain);
-    const int fruit = InventoryGet(FLAMEGPU, kGoodFruit);
 
     float best_price = 0.0f;
     int best_good = kGoodGrain;
     int best_side = kTradeBid;
 
-    for (int good = 0; good < kGoodCount; ++good) {
-        if (!IsTradeableGood(good)) continue;
-        const int held = InventoryGet(FLAMEGPU, good);
-        const int peer = (good == kGoodGrain) ? fruit : grain;
-        const float market_hint = FLAMEGPU->environment.getProperty<float, kGoodCount>("LAST_PRICES", good);
-        const float mu = MarginalUtilityForGood(good, held, peer);
-        const float bid = ReservationBidPrice(money, mu, MarginalUtilityForGood(
-            good == kGoodGrain ? kGoodFruit : kGoodGrain, peer, held));
+    for (unsigned int good = 0u; good < good_count; ++good) {
+        const int good_id = static_cast<int>(good);
+        if (!CatalogIsTradeable(FLAMEGPU, good_id)) continue;
+        const int held = InventoryGet(FLAMEGPU, good_id);
+        const int complement = CatalogGoodComplement(FLAMEGPU, good_id);
+        const int peer = complement >= 0 ? InventoryGet(FLAMEGPU, complement) : 0;
+        const float utility = CatalogGoodUtility(FLAMEGPU, good_id);
+        const float market_hint =
+            FLAMEGPU->environment.getProperty<float, kMaxGoods>("LAST_PRICES", good_id);
+        const float mu = MarginalUtilityForGood(utility, held, peer);
+        float mrs_peer = 0.01f;
+        if (complement >= 0) {
+            const float complement_utility = CatalogGoodUtility(FLAMEGPU, complement);
+            mrs_peer = MarginalUtilityForGood(complement_utility, peer, held);
+        }
+        const float bid = ReservationBidPrice(money, mu, mrs_peer);
         const float ask = ReservationAskPrice(held, mu, market_hint);
-        BidPriceSet(FLAMEGPU, good, bid);
-        AskPriceSet(FLAMEGPU, good, ask);
+        BidPriceSet(FLAMEGPU, good_id, bid);
+        AskPriceSet(FLAMEGPU, good_id, ask);
 
         if (bid > best_price) {
             best_price = bid;
-            best_good = good;
+            best_good = good_id;
             best_side = kTradeBid;
         }
         if (ask > best_price) {
             best_price = ask;
-            best_good = good;
+            best_good = good_id;
             best_side = kTradeAsk;
         }
     }

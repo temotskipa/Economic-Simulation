@@ -2,16 +2,15 @@
 
 #include "flamegpu/flamegpu.h"
 
-#include "data/goods_catalog.cuh"
 #include "util/math.cuh"
 
 namespace austrian_abm {
 
 FLAMEGPU_HOST_DEVICE_FUNCTION float MarginalUtilityForGood(
-    const int good,
+    const float utility_weight,
     const int held,
     const int peer_held) {
-    return GoodUtilityWeight(good)
+    return utility_weight
         / (1.0f + static_cast<float>(held) + 0.25f * static_cast<float>(peer_held));
 }
 

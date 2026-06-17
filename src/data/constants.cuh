@@ -31,18 +31,9 @@ constexpr int kCoalGrowbackRate = 1;
 constexpr int kIronMaxCapacity = 5;
 constexpr int kCoalMaxCapacity = 5;
 
-constexpr int kToolsRecipeIron = 1;
-constexpr int kToolsRecipeCoal = 1;
-constexpr int kSteelRecipeIron = 2;
-constexpr int kSteelRecipeCoal = 1;
-constexpr int kEnginesRecipeSteel = 1;
-constexpr int kEnginesRecipeTools = 1;
-
 constexpr int kActivityHarvest = 0;
 constexpr int kActivityProduce = 1;
 
-constexpr int kFoodRecipeSugar = 1;
-constexpr int kFoodRecipeSpice = 1;
 constexpr int kFoodMetabolismValue = 3;
 constexpr float kFoodValueMultiplier = 1.5f;
 constexpr float kMinProductionSkill = 0.3f;

@@ -1,5 +1,6 @@
 #include "flamegpu/flamegpu.h"
 
+#include "data/catalog_env.cuh"
 #include "data/constants.cuh"
 #include "data/goods_catalog.cuh"
 #include "domain/capital_functions.cuh"
@@ -43,14 +44,11 @@ FLAMEGPU_AGENT_FUNCTION_DEF(AdvanceRoundaboutProduction, flamegpu::MessageNone, 
         const int period = EffectiveProductionPeriod(kRoundaboutIntermediatePeriod, capital_stock);
         ++stage_progress;
         if (stage_progress >= period) {
-            if (InventoryGet(FLAMEGPU, kGoodGrain) < kIntermediateRecipeSugar
-                || InventoryGet(FLAMEGPU, kGoodFruit) < kIntermediateRecipeSpice) {
+            if (!CatalogRoundaboutRecipeHasInputs(FLAMEGPU, 0)) {
                 production_stage = kProductionStageIdle;
                 stage_progress = 0;
             } else {
-                InventoryAdd(FLAMEGPU, kGoodGrain, -kIntermediateRecipeSugar);
-                InventoryAdd(FLAMEGPU, kGoodFruit, -kIntermediateRecipeSpice);
-                InventoryAdd(FLAMEGPU, kGoodIntermediate, 1);
+                CatalogRoundaboutRecipeApply(FLAMEGPU, 0);
                 production_stage = kProductionStageFinal;
                 stage_progress = 0;
             }
@@ -59,12 +57,11 @@ FLAMEGPU_AGENT_FUNCTION_DEF(AdvanceRoundaboutProduction, flamegpu::MessageNone, 
         const int period = EffectiveProductionPeriod(kRoundaboutFinalPeriod, capital_stock);
         ++stage_progress;
         if (stage_progress >= period) {
-            if (InventoryGet(FLAMEGPU, kGoodIntermediate) < kFinalRecipeIntermediate) {
+            if (!CatalogRoundaboutRecipeHasInputs(FLAMEGPU, 1)) {
                 production_stage = kProductionStageIdle;
                 stage_progress = 0;
             } else {
-                InventoryAdd(FLAMEGPU, kGoodIntermediate, -kFinalRecipeIntermediate);
-                InventoryAdd(FLAMEGPU, kGoodFood, 1);
+                CatalogRoundaboutRecipeApply(FLAMEGPU, 1);
                 FLAMEGPU->setVariable<int>("step_production", 1);
                 production_stage = kProductionStageIdle;
                 stage_progress = 0;

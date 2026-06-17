@@ -4,7 +4,9 @@
 
 namespace austrian_abm {
 
-float ComputeWealthGini(flamegpu::DeviceAgentVector& population);
+float ComputeWealthGini(
+    flamegpu::DeviceAgentVector& population,
+    const flamegpu::HostEnvironment& environment);
 
 struct MarketStepMetrics {
     unsigned int step = 0u;

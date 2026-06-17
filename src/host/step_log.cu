@@ -12,16 +12,19 @@
 
 namespace austrian_abm {
 
-float ComputeWealthGini(flamegpu::DeviceAgentVector& population) {
+float ComputeWealthGini(
+    flamegpu::DeviceAgentVector& population,
+    const flamegpu::HostEnvironment& environment) {
+    const unsigned int good_count = environment.getProperty<unsigned int>("GOOD_COUNT");
     std::vector<float> wealth;
     wealth.reserve(population.size());
     for (const auto& cell : population) {
         if (cell.getVariable<int>("status") != kAgentStatusOccupied) continue;
         const float money = cell.getVariable<float>("money");
         float goods_value = 0.0f;
-        for (int good = 0; good < kGoodCount; ++good) {
-            goods_value += static_cast<float>(cell.getVariable<int, kGoodCount>("inventory", good))
-                * GoodWealthValue(good);
+        for (unsigned int good = 0u; good < good_count; ++good) {
+            goods_value += static_cast<float>(cell.getVariable<int, kMaxGoods>("inventory", good))
+                * environment.getProperty<float, kMaxGoods>("GOOD_UTILITY", good);
         }
         const int capital = cell.getVariable<int>("capital_stock");
         wealth.push_back(money + goods_value

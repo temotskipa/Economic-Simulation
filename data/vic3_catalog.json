@@ -1,0 +1,73 @@
+{
+  "goods": [
+    {"id": "grain", "category": "RES", "utility": 1.0, "tradeable": true, "complement": "fruit", "default_price": 1.0},
+    {"id": "fruit", "category": "RES", "utility": 1.0, "tradeable": true, "complement": "grain", "default_price": 1.0},
+    {"id": "food", "category": "STAPLE", "utility": 1.5, "tradeable": true, "default_price": 1.0},
+    {"id": "intermediate", "category": "IND", "utility": 1.2, "tradeable": true, "default_price": 1.0},
+    {"id": "iron", "category": "RES", "utility": 1.1, "tradeable": true, "complement": "grain", "default_price": 2.0},
+    {"id": "coal", "category": "RES", "utility": 1.0, "tradeable": true, "complement": "grain", "default_price": 1.5},
+    {"id": "wood", "category": "RES", "utility": 0.9, "tradeable": true, "complement": "grain", "default_price": 1.0},
+    {"id": "tools", "category": "IND", "utility": 1.4, "tradeable": true, "default_price": 4.0},
+    {"id": "steel", "category": "IND", "utility": 1.5, "tradeable": true, "default_price": 5.0},
+    {"id": "engines", "category": "TECH", "utility": 2.0, "tradeable": true, "default_price": 12.0},
+    {"id": "electricity", "category": "TECH", "utility": 2.2, "tradeable": false, "default_price": 1.0}
+  ],
+  "recipes": [
+    {
+      "id": "engines",
+      "kind": "instant",
+      "priority": 30,
+      "output": "engines",
+      "output_qty": 1,
+      "inputs": [{"good": "steel", "qty": 1}, {"good": "tools", "qty": 1}],
+      "min_skill": 0.3,
+      "activity": "any"
+    },
+    {
+      "id": "steel",
+      "kind": "instant",
+      "priority": 20,
+      "output": "steel",
+      "output_qty": 1,
+      "inputs": [{"good": "iron", "qty": 2}, {"good": "coal", "qty": 1}],
+      "min_skill": 0.3,
+      "activity": "any"
+    },
+    {
+      "id": "tools",
+      "kind": "instant",
+      "priority": 10,
+      "output": "tools",
+      "output_qty": 1,
+      "inputs": [{"good": "iron", "qty": 1}, {"good": "coal", "qty": 1}],
+      "min_skill": 0.3,
+      "activity": "any"
+    },
+    {
+      "id": "food",
+      "kind": "instant",
+      "priority": 5,
+      "output": "food",
+      "output_qty": 1,
+      "inputs": [{"good": "grain", "qty": 1}, {"good": "fruit", "qty": 1}],
+      "min_skill": 0.0,
+      "activity": "produce"
+    }
+  ],
+  "roundabout_recipes": [
+    {
+      "id": "intermediate_stage",
+      "stage": 1,
+      "output": "intermediate",
+      "output_qty": 1,
+      "inputs": [{"good": "grain", "qty": 1}, {"good": "fruit", "qty": 1}]
+    },
+    {
+      "id": "food_from_intermediate",
+      "stage": 2,
+      "output": "food",
+      "output_qty": 1,
+      "inputs": [{"good": "intermediate", "qty": 1}]
+    }
+  ]
+}

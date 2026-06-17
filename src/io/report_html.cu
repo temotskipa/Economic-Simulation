@@ -10,6 +10,7 @@
 
 #include "data/constants.cuh"
 #include "data/goods_catalog.cuh"
+#include "io/catalog.h"
 
 namespace austrian_abm {
 
@@ -76,6 +77,7 @@ std::string ColorFromUnit(const float unit) {
 
 std::string BuildGridMapSvg(
     const flamegpu::AgentVector& population,
+    const SimulationCatalog& catalog,
     const unsigned int grid_width,
     const unsigned int grid_height,
     const char* title,
@@ -94,9 +96,9 @@ std::string BuildGridMapSvg(
         if (std::strcmp(mode, "wealth") == 0) {
             if (cell.getVariable<int>("status") == kAgentStatusOccupied) {
                 float wealth = cell.getVariable<float>("money");
-                for (int good = 0; good < kGoodCount; ++good) {
-                    wealth += static_cast<float>(cell.getVariable<int, kGoodCount>("inventory", good))
-                        * GoodWealthValue(good);
+                for (unsigned int good = 0u; good < catalog.good_count; ++good) {
+                    wealth += static_cast<float>(cell.getVariable<int, kMaxGoods>("inventory", good))
+                        * CatalogUtility(catalog, static_cast<int>(good));
                 }
                 wealth += static_cast<float>(cell.getVariable<int>("capital_stock")) * kCapitalValuePerUnit;
                 values[idx] = wealth;
@@ -104,22 +106,22 @@ std::string BuildGridMapSvg(
         } else if (std::strcmp(mode, "grain") == 0) {
             values[idx] = static_cast<float>(cell.getVariable<int>("env_sugar_level"));
             if (values[idx] < 0.0f) {
-                values[idx] = static_cast<float>(cell.getVariable<int, kGoodCount>("inventory", kGoodGrain));
+                values[idx] = static_cast<float>(cell.getVariable<int, kMaxGoods>("inventory", kGoodGrain));
             }
         } else if (std::strcmp(mode, "fruit") == 0) {
             values[idx] = static_cast<float>(cell.getVariable<int>("env_spice_level"));
             if (values[idx] < 0.0f) {
-                values[idx] = static_cast<float>(cell.getVariable<int, kGoodCount>("inventory", kGoodFruit));
+                values[idx] = static_cast<float>(cell.getVariable<int, kMaxGoods>("inventory", kGoodFruit));
             }
         } else if (std::strcmp(mode, "iron") == 0) {
             values[idx] = static_cast<float>(cell.getVariable<int>("env_iron_level"));
             if (values[idx] < 0.0f) {
-                values[idx] = static_cast<float>(cell.getVariable<int, kGoodCount>("inventory", kGoodIron));
+                values[idx] = static_cast<float>(cell.getVariable<int, kMaxGoods>("inventory", kGoodIron));
             }
         } else {
             values[idx] = static_cast<float>(cell.getVariable<int>("env_coal_level"));
             if (values[idx] < 0.0f) {
-                values[idx] = static_cast<float>(cell.getVariable<int, kGoodCount>("inventory", kGoodCoal));
+                values[idx] = static_cast<float>(cell.getVariable<int, kMaxGoods>("inventory", kGoodCoal));
             }
         }
         max_value = std::max(max_value, values[idx]);
@@ -141,14 +143,16 @@ std::string BuildGridMapSvg(
     return svg.str();
 }
 
-std::string BuildWealthHistogramSvg(const flamegpu::AgentVector& population) {
+std::string BuildWealthHistogramSvg(
+    const flamegpu::AgentVector& population,
+    const SimulationCatalog& catalog) {
     std::vector<float> wealth;
     for (const auto& cell : population) {
         if (cell.getVariable<int>("status") != kAgentStatusOccupied) continue;
         float agent_wealth = cell.getVariable<float>("money");
-        for (int good = 0; good < kGoodCount; ++good) {
-            agent_wealth += static_cast<float>(cell.getVariable<int, kGoodCount>("inventory", good))
-                * GoodWealthValue(good);
+        for (unsigned int good = 0u; good < catalog.good_count; ++good) {
+            agent_wealth += static_cast<float>(cell.getVariable<int, kMaxGoods>("inventory", good))
+                * CatalogUtility(catalog, static_cast<int>(good));
         }
         agent_wealth += static_cast<float>(cell.getVariable<int>("capital_stock")) * kCapitalValuePerUnit;
         wealth.push_back(agent_wealth);
@@ -229,23 +233,24 @@ std::vector<MarketStepMetrics> LoadMarketHistory(const std::filesystem::path& js
 void WriteSimulationReport(
     const flamegpu::AgentVector& population,
     const SimulationConfig& config,
+    const SimulationCatalog& catalog,
     const std::filesystem::path& report_dir) {
     std::filesystem::create_directories(report_dir);
     const auto history = LoadMarketHistory(report_dir / "market_history.jsonl");
     const MarketStepMetrics& last = history.empty() ? MarketStepMetrics{} : history.back();
 
-    const std::string wealth_hist = BuildWealthHistogramSvg(population);
+    const std::string wealth_hist = BuildWealthHistogramSvg(population, catalog);
     const std::string trade_chart = BuildTradeChartSvg(history);
     const std::string grain_map = BuildGridMapSvg(
-        population, config.grid_width, config.grid_height, "Grain map", "grain");
+        population, catalog, config.grid_width, config.grid_height, "Grain map", "grain");
     const std::string fruit_map = BuildGridMapSvg(
-        population, config.grid_width, config.grid_height, "Fruit map", "fruit");
+        population, catalog, config.grid_width, config.grid_height, "Fruit map", "fruit");
     const std::string iron_map = BuildGridMapSvg(
-        population, config.grid_width, config.grid_height, "Iron map", "iron");
+        population, catalog, config.grid_width, config.grid_height, "Iron map", "iron");
     const std::string coal_map = BuildGridMapSvg(
-        population, config.grid_width, config.grid_height, "Coal map", "coal");
+        population, catalog, config.grid_width, config.grid_height, "Coal map", "coal");
     const std::string wealth_map = BuildGridMapSvg(
-        population, config.grid_width, config.grid_height, "Wealth map", "wealth");
+        population, catalog, config.grid_width, config.grid_height, "Wealth map", "wealth");
 
     std::ostringstream html;
     html << "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n"

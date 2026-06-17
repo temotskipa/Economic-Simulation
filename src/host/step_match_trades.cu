@@ -4,6 +4,7 @@
 
 #include "flamegpu/flamegpu.h"
 
+#include "data/catalog_env.cuh"
 #include "data/goods_catalog.cuh"
 #include "domain/credit_functions.cuh"
 #include "host/step_log.h"
@@ -106,14 +107,15 @@ FLAMEGPU_STEP_FUNCTION(MatchTrades) {
     unsigned int trades_count = 0u;
     double volume_sum = 0.0;
     double price_sum = 0.0;
-    double good_volume[kGoodCount] = {};
-    double good_price_sum[kGoodCount] = {};
+    double good_volume[kMaxGoods] = {};
+    double good_price_sum[kMaxGoods] = {};
 
     std::vector<TradeParticipant> buyers;
     std::vector<TradeParticipant> sellers;
 
-    for (int good = 0; good < kGoodCount; ++good) {
-        if (!IsTradeableGood(good)) continue;
+    const unsigned int good_count = CatalogGoodCount(FLAMEGPU);
+    for (unsigned int good = 0u; good < good_count; ++good) {
+        if (!CatalogIsTradeable(FLAMEGPU, static_cast<int>(good))) continue;
         CollectParticipants(population, good, buyers, sellers);
         unsigned int good_trades = 0u;
         float trade_price = 0.0f;
@@ -126,10 +128,10 @@ FLAMEGPU_STEP_FUNCTION(MatchTrades) {
         }
     }
 
-    for (int good = 0; good < kGoodCount; ++good) {
+    for (unsigned int good = 0u; good < good_count; ++good) {
         if (good_volume[good] > 0.0) {
             const float last_price = static_cast<float>(good_price_sum[good] / good_volume[good]);
-            FLAMEGPU->environment.setProperty<float, kGoodCount>("LAST_PRICES", good, last_price);
+            FLAMEGPU->environment.setProperty<float, kMaxGoods>("LAST_PRICES", good, last_price);
         }
     }
 
@@ -165,19 +167,20 @@ FLAMEGPU_STEP_FUNCTION(LogMarketStep) {
     for (const auto& cell : population) {
         if (cell.getVariable<int>("status") != kAgentStatusOccupied) continue;
         ++population_count;
-        for (int good = 0; good < kGoodCount; ++good) {
-            const long long qty = cell.getVariable<int, kGoodCount>("inventory", good);
-            switch (GoodCategory(good)) {
+        const unsigned int log_good_count = CatalogGoodCount(FLAMEGPU);
+        for (unsigned int good = 0u; good < log_good_count; ++good) {
+            const long long qty = cell.getVariable<int, kMaxGoods>("inventory", good);
+            switch (CatalogGoodCategory(FLAMEGPU, static_cast<int>(good))) {
                 case kCategoryRes: total_res += qty; break;
                 case kCategoryIndustrial: total_ind += qty; break;
                 case kCategoryTech: total_tech += qty; break;
                 default: break;
             }
         }
-        total_grain += cell.getVariable<int, kGoodCount>("inventory", kGoodGrain);
-        total_fruit += cell.getVariable<int, kGoodCount>("inventory", kGoodFruit);
-        total_food += cell.getVariable<int, kGoodCount>("inventory", kGoodFood);
-        total_intermediate += cell.getVariable<int, kGoodCount>("inventory", kGoodIntermediate);
+        total_grain += cell.getVariable<int, kMaxGoods>("inventory", kGoodGrain);
+        total_fruit += cell.getVariable<int, kMaxGoods>("inventory", kGoodFruit);
+        total_food += cell.getVariable<int, kMaxGoods>("inventory", kGoodFood);
+        total_intermediate += cell.getVariable<int, kMaxGoods>("inventory", kGoodIntermediate);
         total_capital += cell.getVariable<int>("capital_stock");
         if (cell.getVariable<int>("step_production") > 0) {
             ++production_count;
@@ -214,7 +217,7 @@ FLAMEGPU_STEP_FUNCTION(LogMarketStep) {
     metrics.avg_price = FLAMEGPU->environment.getProperty<float>("AVG_TRADE_PRICE");
     metrics.trades_count = FLAMEGPU->environment.getProperty<unsigned int>("TRADES_COUNT");
     metrics.trade_volume = FLAMEGPU->environment.getProperty<float>("TRADE_VOLUME");
-    metrics.wealth_gini = ComputeWealthGini(population);
+    metrics.wealth_gini = ComputeWealthGini(population, FLAMEGPU->environment);
     metrics.population = population_count;
     metrics.total_sugar = total_grain;
     metrics.total_spice = total_fruit;

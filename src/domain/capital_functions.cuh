@@ -44,7 +44,11 @@ FLAMEGPU_HOST_DEVICE_FUNCTION int ChooseEconomicActivity(
     const float spice_price,
     const float effective_rate,
     const float natural_rate,
-    const unsigned int good_stages) {
+    const unsigned int good_stages,
+    const int roundabout_min_grain,
+    const int roundabout_min_fruit,
+    const int food_grain_qty,
+    const int food_fruit_qty) {
     const float adjusted_discount = CreditAdjustedDiscount(
         time_preference, effective_rate, natural_rate);
     if (good_stages >= 2u
@@ -60,8 +64,8 @@ FLAMEGPU_HOST_DEVICE_FUNCTION int ChooseEconomicActivity(
     }
 
     if (good_stages >= 2u
-        && sugar_level >= kIntermediateRecipeSugar
-        && spice_level >= kIntermediateRecipeSpice) {
+        && sugar_level >= roundabout_min_grain
+        && spice_level >= roundabout_min_fruit) {
         const int total_periods =
             EffectiveProductionPeriod(kRoundaboutIntermediatePeriod, capital_stock)
             + EffectiveProductionPeriod(kRoundaboutFinalPeriod, capital_stock);
@@ -79,7 +83,8 @@ FLAMEGPU_HOST_DEVICE_FUNCTION int ChooseEconomicActivity(
     }
 
     return ChooseActivityMode(
-        production_skill, sugar_price, spice_price, sugar_level, spice_level);
+        production_skill, sugar_price, spice_price, sugar_level, spice_level,
+        food_grain_qty, food_fruit_qty);
 }
 
 }  // namespace austrian_abm

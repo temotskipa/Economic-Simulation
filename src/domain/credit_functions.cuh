@@ -21,10 +21,12 @@ FLAMEGPU_HOST_DEVICE_FUNCTION bool IsEntrepreneurEligibleForCredit(
     const float production_skill,
     const int grain_level,
     const int fruit_level,
-    const float loan_balance) {
+    const float loan_balance,
+    const int min_grain,
+    const int min_fruit) {
     return production_skill >= kEntrepreneurMinSkill
-        && grain_level >= kIntermediateRecipeSugar
-        && fruit_level >= kIntermediateRecipeSpice
+        && grain_level >= min_grain
+        && fruit_level >= min_fruit
         && loan_balance < kMaxLoanBalance;
 }
 

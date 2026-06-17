@@ -1,7 +1,5 @@
 #include "model/build_model.h"
 
-#include <array>
-
 #include "data/constants.cuh"
 #include "data/goods_catalog.cuh"
 #include "model/model_symbols.cuh"
@@ -10,23 +8,12 @@ namespace austrian_abm {
 
 namespace {
 
-std::array<float, kGoodCount> DefaultLastPrices() {
-    std::array<float, kGoodCount> prices{};
-    for (float& price : prices) price = 1.0f;
-    prices[kGoodIron] = 2.0f;
-    prices[kGoodCoal] = 1.5f;
-    prices[kGoodTools] = 4.0f;
-    prices[kGoodSteel] = 5.0f;
-    prices[kGoodEngines] = 12.0f;
-    return prices;
-}
-
 flamegpu::AgentDescription MakeCoreCell(flamegpu::ModelDescription& model) {
     flamegpu::AgentDescription cell = model.newAgent("cell");
     cell.newVariable<unsigned int, 2>("pos");
     cell.newVariable<int>("agent_id");
     cell.newVariable<int>("status");
-    cell.newVariable<int, kGoodCount>("inventory");
+    cell.newVariable<int, kMaxGoods>("inventory");
     cell.newVariable<int>("metabolism");
     cell.newVariable<float>("money");
     cell.newVariable<int>("env_sugar_level");
@@ -37,8 +24,8 @@ flamegpu::AgentDescription MakeCoreCell(flamegpu::ModelDescription& model) {
     cell.newVariable<int>("env_max_spice_level");
     cell.newVariable<int>("env_max_iron_level");
     cell.newVariable<int>("env_max_coal_level");
-    cell.newVariable<float, kGoodCount>("bid_price");
-    cell.newVariable<float, kGoodCount>("ask_price");
+    cell.newVariable<float, kMaxGoods>("bid_price");
+    cell.newVariable<float, kMaxGoods>("ask_price");
     cell.newVariable<float>("production_skill");
     cell.newVariable<int>("activity_mode");
     cell.newVariable<int>("step_production");
@@ -67,7 +54,10 @@ flamegpu::AgentDescription MakeBank(flamegpu::ModelDescription& model) {
 
 }  // namespace
 
-void BuildModel(flamegpu::ModelDescription& model, const SimulationConfig& config) {
+void BuildModel(
+    flamegpu::ModelDescription& model,
+    const SimulationConfig& config,
+    const SimulationCatalog& catalog) {
     auto env = model.Environment();
     env.newProperty<unsigned int>("GRID_WIDTH", config.grid_width);
     env.newProperty<unsigned int>("GRID_HEIGHT", config.grid_height);
@@ -79,7 +69,7 @@ void BuildModel(flamegpu::ModelDescription& model, const SimulationConfig& confi
     env.newProperty<unsigned int>("TRADES_COUNT", 0u);
     env.newProperty<float>("TRADE_VOLUME", 0.0f);
     env.newProperty<float>("AVG_TRADE_PRICE", 0.0f);
-    env.newProperty<float, kGoodCount>("LAST_PRICES", DefaultLastPrices());
+    UploadCatalogToEnvironment(env, catalog);
     env.newProperty<unsigned int>("PRODUCTION_COUNT", 0u);
     env.newProperty<unsigned int>("PRODUCER_COUNT", 0u);
     env.newProperty<unsigned int>("INVESTMENT_COUNT", 0u);
@@ -111,7 +101,7 @@ void BuildModel(flamegpu::ModelDescription& model, const SimulationConfig& confi
             auto message = movement_model.newMessage<flamegpu::MessageArray2D>("movement_request");
             message.newVariable<int>("agent_id");
             message.newVariable<flamegpu::id_t>("location_id");
-            message.newVariable<int, kGoodCount>("inventory");
+            message.newVariable<int, kMaxGoods>("inventory");
             message.newVariable<int>("metabolism");
             message.newVariable<float>("money");
             message.newVariable<float>("production_skill");
@@ -166,8 +156,7 @@ void BuildModel(flamegpu::ModelDescription& model, const SimulationConfig& confi
     cell.newFunction("ChooseProductionActivity", ChooseProductionActivity);
     cell.newFunction("InvestCapital", InvestCapital);
     cell.newFunction("AdvanceRoundaboutProduction", AdvanceRoundaboutProduction);
-    cell.newFunction("ProduceFood", ProduceFood);
-    cell.newFunction("ProduceIndustrialGoods", ProduceIndustrialGoods);
+    cell.newFunction("ProduceFromRecipes", ProduceFromRecipes);
     auto fn_trade = cell.newFunction("OutputTradeOffers", OutputTradeOffers);
     fn_trade.setMessageOutput("trade_offer");
 
@@ -181,8 +170,7 @@ void BuildModel(flamegpu::ModelDescription& model, const SimulationConfig& confi
     model.newLayer("L3_ChooseProductionActivity").addAgentFunction(cell.getFunction("ChooseProductionActivity"));
     model.newLayer("L4_InvestCapital").addAgentFunction(cell.getFunction("InvestCapital"));
     model.newLayer("L5_AdvanceRoundaboutProduction").addAgentFunction(cell.getFunction("AdvanceRoundaboutProduction"));
-    model.newLayer("L6_ProduceFood").addAgentFunction(cell.getFunction("ProduceFood"));
-    model.newLayer("L6b_ProduceIndustrialGoods").addAgentFunction(cell.getFunction("ProduceIndustrialGoods"));
+    model.newLayer("L6_ProduceFromRecipes").addAgentFunction(cell.getFunction("ProduceFromRecipes"));
     model.newLayer("L7_OutputTradeOffers").addAgentFunction(fn_trade);
 
     model.addStepFunction(MatchTrades);

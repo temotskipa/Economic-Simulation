@@ -39,10 +39,13 @@ SET(ALL_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/host/step_match_trades.cu
     ${CMAKE_CURRENT_SOURCE_DIR}/src/host/step_log.cu
     ${CMAKE_CURRENT_SOURCE_DIR}/src/io/config.cu
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/io/catalog_loader.cu
     ${CMAKE_CURRENT_SOURCE_DIR}/src/io/report_html.cu
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/constants.cuh
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/goods_catalog.cuh
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/data/catalog_env.cuh
     ${CMAKE_CURRENT_SOURCE_DIR}/src/domain/inventory.cuh
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/io/catalog.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/domain/trade_functions.cuh
     ${CMAKE_CURRENT_SOURCE_DIR}/src/domain/production_functions.cuh
     ${CMAKE_CURRENT_SOURCE_DIR}/src/domain/present_value.cuh
@@ -57,7 +60,9 @@ SET(ALL_SRC
 
 flamegpu_add_executable("${PROJECT_NAME}" "${ALL_SRC}" "${FLAMEGPU_ROOT}" "${PROJECT_BINARY_DIR}" OFF)
 
-target_include_directories("${PROJECT_NAME}" PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
+target_include_directories("${PROJECT_NAME}" PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/src"
+    "${CMAKE_BINARY_DIR}/_deps/nlohmann_json-src/include")
 
 set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" PROPERTY VS_STARTUP_PROJECT "${PROJECT_NAME}")
 set_target_properties("${PROJECT_NAME}" PROPERTIES

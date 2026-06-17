@@ -23,6 +23,7 @@ $env:AUSTRIAN_ABM_OCCUPANCY = "0.1"
 $env:AUSTRIAN_ABM_NATURAL_RATE = "0.08"
 $env:AUSTRIAN_ABM_POLICY_RATE = "0.02"
 $env:AUSTRIAN_ABM_RATE_SHOCK_STEP = "6"
+$env:AUSTRIAN_ABM_CATALOG_PATH = (Join-Path $RepoRoot "data/vic3_catalog.json")
 
 Push-Location $RepoRoot
 try {
