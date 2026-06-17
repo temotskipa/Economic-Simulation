@@ -15,8 +15,8 @@ constexpr int kCategorySvcEducation = 8;
 constexpr int kKindGood = 0;
 constexpr int kKindService = 1;
 
-constexpr int kMaxGoods = 24;
-constexpr int kMaxRecipes = 24;
+constexpr int kMaxGoods = 32;
+constexpr int kMaxRecipes = 32;
 constexpr int kMaxRoundaboutRecipes = 4;
 constexpr int kGoodCount = kMaxGoods;
 
@@ -42,12 +42,22 @@ constexpr int kGoodFabric = 11;
 constexpr int kGoodGlass = 12;
 constexpr int kGoodFertilizer = 13;
 constexpr int kGoodRubber = 14;
+constexpr int kGoodPaper = 15;
+constexpr int kGoodLiquor = 16;
+constexpr int kGoodLivestock = 17;
+constexpr int kGoodMeat = 18;
+constexpr int kGoodFish = 19;
+constexpr int kGoodSilk = 20;
+constexpr int kGoodDyes = 21;
+constexpr int kGoodPorcelain = 22;
+constexpr int kGoodCoffee = 23;
+constexpr int kGoodOil = 24;
 
-constexpr int kSvcTransport = 15;
-constexpr int kSvcConstruction = 16;
-constexpr int kSvcClerical = 17;
-constexpr int kSvcHealthcare = 18;
-constexpr int kSvcEducation = 19;
+constexpr int kSvcTransport = 25;
+constexpr int kSvcConstruction = 26;
+constexpr int kSvcClerical = 27;
+constexpr int kSvcHealthcare = 28;
+constexpr int kSvcEducation = 29;
 
 constexpr int kGoodSugar = kGoodGrain;
 constexpr int kGoodSpice = kGoodFruit;

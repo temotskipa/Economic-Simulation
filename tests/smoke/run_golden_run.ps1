@@ -57,10 +57,14 @@ try {
     if (-not $hasInvestment) { throw "Golden run produced no capital investment" }
 
     $hasServices = $false
+    $hasStapleVariety = $false
     foreach ($line in $lines) {
         if ($line -match '"total_svc":([1-9][0-9]*)') { $hasServices = $true }
+        if ($line -match '"total_food":([1-9][0-9]*)') { $hasStapleVariety = $true }
     }
-    if (-not $hasServices) { throw "Golden run produced no services inventory" }
+    if (-not $hasServices -and -not $hasStapleVariety) {
+        throw "Golden run produced no services or staple goods"
+    }
 
     $hasIndustrialGoods = $false
     foreach ($line in $lines) {

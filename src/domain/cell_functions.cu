@@ -43,9 +43,18 @@ FLAMEGPU_AGENT_FUNCTION_DEF(MetaboliseAndGrowback, flamegpu::MessageNone, flameg
             if (InventoryGet(FLAMEGPU, kGoodFood) > 0) {
                 InventoryAdd(FLAMEGPU, kGoodFood, -1);
                 metabolism -= kFoodMetabolismValue;
+            } else if (InventoryGet(FLAMEGPU, kGoodMeat) > 0) {
+                InventoryAdd(FLAMEGPU, kGoodMeat, -1);
+                metabolism -= kMeatMetabolismValue;
+            } else if (InventoryGet(FLAMEGPU, kGoodFish) > 0) {
+                InventoryAdd(FLAMEGPU, kGoodFish, -1);
+                metabolism -= kFishMetabolismValue;
             } else if (InventoryGet(FLAMEGPU, kSvcHealthcare) > 0) {
                 InventoryAdd(FLAMEGPU, kSvcHealthcare, -1);
                 metabolism -= kHealthcareMetabolismValue;
+            } else if (InventoryGet(FLAMEGPU, kGoodLiquor) > 0) {
+                InventoryAdd(FLAMEGPU, kGoodLiquor, -1);
+                metabolism -= kLiquorMetabolismValue;
             } else if (InventoryGet(FLAMEGPU, kGoodGrain) > 0) {
                 InventoryAdd(FLAMEGPU, kGoodGrain, -1);
                 --metabolism;
@@ -72,7 +81,9 @@ FLAMEGPU_AGENT_FUNCTION_DEF(MetaboliseAndGrowback, flamegpu::MessageNone, flameg
         const bool destitute =
             InventoryGet(FLAMEGPU, kGoodGrain) <= 0
             && InventoryGet(FLAMEGPU, kGoodFruit) <= 0
-            && InventoryGet(FLAMEGPU, kGoodFood) <= 0;
+            && InventoryGet(FLAMEGPU, kGoodFood) <= 0
+            && InventoryGet(FLAMEGPU, kGoodMeat) <= 0
+            && InventoryGet(FLAMEGPU, kGoodFish) <= 0;
         if (destitute) {
             status = kAgentStatusUnoccupied;
             FLAMEGPU->setVariable<int>("agent_id", -1);

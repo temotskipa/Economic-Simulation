@@ -14,7 +14,17 @@
     {"id": "fabric", "category": "IND", "utility": 1.3, "tradeable": true, "default_price": 3.0},
     {"id": "glass", "category": "IND", "utility": 1.2, "tradeable": true, "default_price": 2.5},
     {"id": "fertilizer", "category": "IND", "utility": 1.1, "tradeable": true, "default_price": 2.0},
-    {"id": "rubber", "category": "IND", "utility": 1.25, "tradeable": true, "default_price": 3.5}
+    {"id": "rubber", "category": "IND", "utility": 1.25, "tradeable": true, "default_price": 3.5},
+    {"id": "paper", "category": "IND", "utility": 1.15, "tradeable": true, "default_price": 2.0},
+    {"id": "liquor", "category": "STAPLE", "utility": 1.35, "tradeable": true, "complement": "food", "default_price": 3.0},
+    {"id": "livestock", "category": "RES", "utility": 1.05, "tradeable": true, "complement": "grain", "default_price": 2.5},
+    {"id": "meat", "category": "STAPLE", "utility": 1.45, "tradeable": true, "complement": "fish", "default_price": 2.5},
+    {"id": "fish", "category": "STAPLE", "utility": 1.4, "tradeable": true, "complement": "meat", "default_price": 2.0},
+    {"id": "silk", "category": "IND", "utility": 1.6, "tradeable": true, "default_price": 6.0},
+    {"id": "dyes", "category": "IND", "utility": 1.3, "tradeable": true, "default_price": 4.0},
+    {"id": "porcelain", "category": "IND", "utility": 1.55, "tradeable": true, "default_price": 7.0},
+    {"id": "coffee", "category": "STAPLE", "utility": 1.5, "tradeable": true, "complement": "liquor", "default_price": 5.0},
+    {"id": "oil", "category": "RES", "utility": 1.2, "tradeable": true, "complement": "coal", "default_price": 3.0}
   ],
   "services": [
     {"id": "transport", "category": "SVC_TRANSPORT", "utility": 1.4, "tradeable": true, "decay_per_step": 1, "default_price": 6.0},
@@ -45,6 +55,36 @@
       "activity": "any"
     },
     {
+      "id": "porcelain",
+      "kind": "instant",
+      "priority": 31,
+      "output": "porcelain",
+      "output_qty": 1,
+      "inputs": [{"good": "glass", "qty": 1}, {"good": "coal", "qty": 1}],
+      "min_skill": 0.35,
+      "activity": "any"
+    },
+    {
+      "id": "engines",
+      "kind": "instant",
+      "priority": 30,
+      "output": "engines",
+      "output_qty": 1,
+      "inputs": [{"good": "steel", "qty": 1}, {"good": "tools", "qty": 1}],
+      "min_skill": 0.3,
+      "activity": "any"
+    },
+    {
+      "id": "clerical_basic",
+      "kind": "instant",
+      "priority": 29,
+      "output": "clerical",
+      "output_qty": 1,
+      "inputs": [{"good": "food", "qty": 2}],
+      "min_skill": 0.15,
+      "activity": "any"
+    },
+    {
       "id": "transport",
       "kind": "instant",
       "priority": 28,
@@ -65,23 +105,63 @@
       "activity": "any"
     },
     {
+      "id": "silk",
+      "kind": "instant",
+      "priority": 24,
+      "output": "silk",
+      "output_qty": 1,
+      "inputs": [{"good": "fabric", "qty": 1}, {"good": "fruit", "qty": 1}],
+      "min_skill": 0.3,
+      "activity": "any"
+    },
+    {
       "id": "clerical",
       "kind": "instant",
       "priority": 22,
       "output": "clerical",
       "output_qty": 1,
-      "inputs": [{"good": "food", "qty": 2}],
+      "inputs": [{"good": "food", "qty": 1}, {"good": "paper", "qty": 1}],
       "min_skill": 0.2,
       "activity": "any"
     },
     {
-      "id": "engines",
+      "id": "paper",
       "kind": "instant",
-      "priority": 30,
-      "output": "engines",
+      "priority": 21,
+      "output": "paper",
       "output_qty": 1,
-      "inputs": [{"good": "steel", "qty": 1}, {"good": "tools", "qty": 1}],
+      "inputs": [{"good": "wood", "qty": 2}],
+      "min_skill": 0.2,
+      "activity": "any"
+    },
+    {
+      "id": "coffee",
+      "kind": "instant",
+      "priority": 20,
+      "output": "coffee",
+      "output_qty": 1,
+      "inputs": [{"good": "fruit", "qty": 1}, {"good": "fertilizer", "qty": 1}],
+      "min_skill": 0.25,
+      "activity": "any"
+    },
+    {
+      "id": "steel",
+      "kind": "instant",
+      "priority": 20,
+      "output": "steel",
+      "output_qty": 1,
+      "inputs": [{"good": "iron", "qty": 2}, {"good": "coal", "qty": 1}],
       "min_skill": 0.3,
+      "activity": "any"
+    },
+    {
+      "id": "liquor",
+      "kind": "instant",
+      "priority": 19,
+      "output": "liquor",
+      "output_qty": 1,
+      "inputs": [{"good": "grain", "qty": 1}, {"good": "fruit", "qty": 1}],
+      "min_skill": 0.2,
       "activity": "any"
     },
     {
@@ -95,6 +175,26 @@
       "activity": "any"
     },
     {
+      "id": "meat",
+      "kind": "instant",
+      "priority": 17,
+      "output": "meat",
+      "output_qty": 1,
+      "inputs": [{"good": "livestock", "qty": 1}],
+      "min_skill": 0.15,
+      "activity": "any"
+    },
+    {
+      "id": "livestock",
+      "kind": "instant",
+      "priority": 16,
+      "output": "livestock",
+      "output_qty": 1,
+      "inputs": [{"good": "grain", "qty": 2}],
+      "min_skill": 0.15,
+      "activity": "any"
+    },
+    {
       "id": "glass",
       "kind": "instant",
       "priority": 16,
@@ -102,6 +202,16 @@
       "output_qty": 1,
       "inputs": [{"good": "coal", "qty": 1}, {"good": "wood", "qty": 1}],
       "min_skill": 0.25,
+      "activity": "any"
+    },
+    {
+      "id": "fish",
+      "kind": "instant",
+      "priority": 15,
+      "output": "fish",
+      "output_qty": 1,
+      "inputs": [{"good": "grain", "qty": 1}, {"good": "wood", "qty": 1}],
+      "min_skill": 0.2,
       "activity": "any"
     },
     {
@@ -115,23 +225,33 @@
       "activity": "any"
     },
     {
+      "id": "dyes",
+      "kind": "instant",
+      "priority": 13,
+      "output": "dyes",
+      "output_qty": 1,
+      "inputs": [{"good": "coal", "qty": 1}, {"good": "fruit", "qty": 1}],
+      "min_skill": 0.25,
+      "activity": "any"
+    },
+    {
       "id": "rubber",
       "kind": "instant",
       "priority": 12,
       "output": "rubber",
       "output_qty": 1,
-      "inputs": [{"good": "wood", "qty": 1}, {"good": "coal", "qty": 1}],
+      "inputs": [{"good": "wood", "qty": 1}, {"good": "oil", "qty": 1}],
       "min_skill": 0.25,
       "activity": "any"
     },
     {
-      "id": "steel",
+      "id": "oil",
       "kind": "instant",
-      "priority": 20,
-      "output": "steel",
+      "priority": 11,
+      "output": "oil",
       "output_qty": 1,
-      "inputs": [{"good": "iron", "qty": 2}, {"good": "coal", "qty": 1}],
-      "min_skill": 0.3,
+      "inputs": [{"good": "coal", "qty": 2}],
+      "min_skill": 0.2,
       "activity": "any"
     },
     {
