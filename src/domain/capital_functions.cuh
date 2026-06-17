@@ -3,6 +3,7 @@
 #include "flamegpu/flamegpu.h"
 
 #include "data/constants.cuh"
+#include "domain/credit_functions.cuh"
 #include "domain/present_value.cuh"
 #include "domain/production_functions.cuh"
 
@@ -41,13 +42,17 @@ FLAMEGPU_HOST_DEVICE_FUNCTION int ChooseEconomicActivity(
     const int spice_level,
     const float sugar_price,
     const float spice_price,
+    const float effective_rate,
+    const float natural_rate,
     const unsigned int good_stages) {
+    const float adjusted_discount = CreditAdjustedDiscount(
+        time_preference, effective_rate, natural_rate);
     if (good_stages >= 2u
         && time_preference <= kCapitalOwnerMaxTimePreference
         && money >= kCapitalUnitCost) {
         const float pv_invest = PresentValue(
             ExpectedCapitalReturn(production_skill, sugar_price, spice_price),
-            time_preference,
+            adjusted_discount,
             2);
         if (pv_invest >= kCapitalUnitCost) {
             return kActivityInvest;
@@ -62,11 +67,11 @@ FLAMEGPU_HOST_DEVICE_FUNCTION int ChooseEconomicActivity(
             + EffectiveProductionPeriod(kRoundaboutFinalPeriod, capital_stock);
         const float pv_roundabout = PresentValue(
             RoundaboutFoodValue(production_skill, sugar_price, spice_price),
-            time_preference,
+            adjusted_discount,
             total_periods);
         const float pv_direct = PresentValue(
             DirectFoodValue(production_skill, sugar_price, spice_price),
-            time_preference,
+            adjusted_discount,
             kDirectProductionPeriod);
         if (pv_roundabout > pv_direct && pv_roundabout > 0.0f) {
             return kActivityRoundabout;

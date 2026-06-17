@@ -9,6 +9,7 @@
 #include <string>
 
 #include "data/constants.cuh"
+#include "data/goods_catalog.cuh"
 
 namespace austrian_abm {
 
@@ -46,6 +47,9 @@ MarketStepMetrics ParseMarketLine(const std::string& line) {
     metrics.total_sugar = ParseJsonLong(line, "total_sugar");
     metrics.total_spice = ParseJsonLong(line, "total_spice");
     metrics.total_food = ParseJsonLong(line, "total_food");
+    metrics.total_res = ParseJsonLong(line, "total_res");
+    metrics.total_ind = ParseJsonLong(line, "total_ind");
+    metrics.total_tech = ParseJsonLong(line, "total_tech");
     metrics.production_count = ParseJsonUint(line, "production_count");
     metrics.producer_count = ParseJsonUint(line, "producer_count");
     metrics.total_capital = ParseJsonLong(line, "total_capital");
@@ -53,6 +57,11 @@ MarketStepMetrics ParseMarketLine(const std::string& line) {
     metrics.investment_count = ParseJsonUint(line, "investment_count");
     metrics.roundabout_count = ParseJsonUint(line, "roundabout_count");
     metrics.capital_owner_count = ParseJsonUint(line, "capital_owner_count");
+    metrics.credit_created = ParseJsonUint(line, "credit_created");
+    metrics.total_loans = ParseJsonFloat(line, "total_loans");
+    metrics.effective_rate = ParseJsonFloat(line, "effective_rate");
+    metrics.rate_suppressed = ParseJsonUint(line, "rate_suppressed");
+    metrics.malinvestment_count = ParseJsonUint(line, "malinvestment_count");
     return metrics;
 }
 
@@ -84,20 +93,33 @@ std::string BuildGridMapSvg(
         const size_t idx = static_cast<size_t>(y) * grid_width + x;
         if (std::strcmp(mode, "wealth") == 0) {
             if (cell.getVariable<int>("status") == kAgentStatusOccupied) {
-                values[idx] = cell.getVariable<float>("money")
-                    + static_cast<float>(cell.getVariable<int>("sugar_level"))
-                    + static_cast<float>(cell.getVariable<int>("spice_level"))
-                    + static_cast<float>(cell.getVariable<int>("food_level")) * kFoodValueMultiplier;
+                float wealth = cell.getVariable<float>("money");
+                for (int good = 0; good < kGoodCount; ++good) {
+                    wealth += static_cast<float>(cell.getVariable<int, kGoodCount>("inventory", good))
+                        * GoodWealthValue(good);
+                }
+                wealth += static_cast<float>(cell.getVariable<int>("capital_stock")) * kCapitalValuePerUnit;
+                values[idx] = wealth;
             }
-        } else if (std::strcmp(mode, "sugar") == 0) {
+        } else if (std::strcmp(mode, "grain") == 0) {
             values[idx] = static_cast<float>(cell.getVariable<int>("env_sugar_level"));
             if (values[idx] < 0.0f) {
-                values[idx] = static_cast<float>(cell.getVariable<int>("sugar_level"));
+                values[idx] = static_cast<float>(cell.getVariable<int, kGoodCount>("inventory", kGoodGrain));
             }
-        } else {
+        } else if (std::strcmp(mode, "fruit") == 0) {
             values[idx] = static_cast<float>(cell.getVariable<int>("env_spice_level"));
             if (values[idx] < 0.0f) {
-                values[idx] = static_cast<float>(cell.getVariable<int>("spice_level"));
+                values[idx] = static_cast<float>(cell.getVariable<int, kGoodCount>("inventory", kGoodFruit));
+            }
+        } else if (std::strcmp(mode, "iron") == 0) {
+            values[idx] = static_cast<float>(cell.getVariable<int>("env_iron_level"));
+            if (values[idx] < 0.0f) {
+                values[idx] = static_cast<float>(cell.getVariable<int, kGoodCount>("inventory", kGoodIron));
+            }
+        } else {
+            values[idx] = static_cast<float>(cell.getVariable<int>("env_coal_level"));
+            if (values[idx] < 0.0f) {
+                values[idx] = static_cast<float>(cell.getVariable<int, kGoodCount>("inventory", kGoodCoal));
             }
         }
         max_value = std::max(max_value, values[idx]);
@@ -123,12 +145,13 @@ std::string BuildWealthHistogramSvg(const flamegpu::AgentVector& population) {
     std::vector<float> wealth;
     for (const auto& cell : population) {
         if (cell.getVariable<int>("status") != kAgentStatusOccupied) continue;
-        wealth.push_back(cell.getVariable<float>("money")
-            + static_cast<float>(cell.getVariable<int>("sugar_level"))
-            + static_cast<float>(cell.getVariable<int>("spice_level"))
-            + static_cast<float>(cell.getVariable<int>("food_level")) * kFoodValueMultiplier
-            + static_cast<float>(cell.getVariable<int>("capital_stock")) * kCapitalValuePerUnit
-            + static_cast<float>(cell.getVariable<int>("intermediate_level")) * kFoodValueMultiplier);
+        float agent_wealth = cell.getVariable<float>("money");
+        for (int good = 0; good < kGoodCount; ++good) {
+            agent_wealth += static_cast<float>(cell.getVariable<int, kGoodCount>("inventory", good))
+                * GoodWealthValue(good);
+        }
+        agent_wealth += static_cast<float>(cell.getVariable<int>("capital_stock")) * kCapitalValuePerUnit;
+        wealth.push_back(agent_wealth);
     }
     if (wealth.empty()) return "<p>No occupied agents for wealth histogram.</p>";
 
@@ -213,16 +236,20 @@ void WriteSimulationReport(
 
     const std::string wealth_hist = BuildWealthHistogramSvg(population);
     const std::string trade_chart = BuildTradeChartSvg(history);
-    const std::string sugar_map = BuildGridMapSvg(
-        population, config.grid_width, config.grid_height, "Sugar map", "sugar");
-    const std::string spice_map = BuildGridMapSvg(
-        population, config.grid_width, config.grid_height, "Spice map", "spice");
+    const std::string grain_map = BuildGridMapSvg(
+        population, config.grid_width, config.grid_height, "Grain map", "grain");
+    const std::string fruit_map = BuildGridMapSvg(
+        population, config.grid_width, config.grid_height, "Fruit map", "fruit");
+    const std::string iron_map = BuildGridMapSvg(
+        population, config.grid_width, config.grid_height, "Iron map", "iron");
+    const std::string coal_map = BuildGridMapSvg(
+        population, config.grid_width, config.grid_height, "Coal map", "coal");
     const std::string wealth_map = BuildGridMapSvg(
         population, config.grid_width, config.grid_height, "Wealth map", "wealth");
 
     std::ostringstream html;
     html << "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n"
-         << "<title>Austrian ABM Sugarscape Report</title>\n"
+         << "<title>Austrian ABM Vic3 Goods Report</title>\n"
          << "<style>body{font-family:Inter,Segoe UI,sans-serif;background:#0f172a;color:#e2e8f0;"
          << "max-width:1100px;margin:0 auto;padding:2rem}"
          << "h1{color:#38bdf8;text-align:center}.card{background:#1e293b;border-radius:10px;"
@@ -230,7 +257,7 @@ void WriteSimulationReport(
          << ".stat{color:#94a3b8;font-size:.85rem}.val{color:#f8fafc;font-size:1.2rem;font-weight:700}"
          << ".maps{display:grid;grid-template-columns:repeat(2,1fr);gap:1rem}svg{width:100%;height:auto}"
          << "</style></head><body>\n"
-         << "<h1>Austrian ABM Sugarscape Report</h1>\n"
+         << "<h1>Austrian ABM Vic3 Goods Report</h1>\n"
          << "<div class=\"grid\">\n"
          << "<div class=\"card\"><div class=\"stat\">Seed</div><div class=\"val\">" << config.seed << "</div></div>\n"
          << "<div class=\"card\"><div class=\"stat\">Steps</div><div class=\"val\">" << config.steps << "</div></div>\n"
@@ -241,12 +268,20 @@ void WriteSimulationReport(
          << "<div class=\"card\"><div class=\"stat\">Total capital stock</div><div class=\"val\">" << last.total_capital << "</div></div>\n"
          << "<div class=\"card\"><div class=\"stat\">Capital owners</div><div class=\"val\">" << last.capital_owner_count << "</div></div>\n"
          << "<div class=\"card\"><div class=\"stat\">Roundabout producers</div><div class=\"val\">" << last.roundabout_count << "</div></div>\n"
+         << "<div class=\"card\"><div class=\"stat\">Credit created (last step)</div><div class=\"val\">" << last.credit_created << "</div></div>\n"
+         << "<div class=\"card\"><div class=\"stat\">Malinvestment signals</div><div class=\"val\">" << last.malinvestment_count << "</div></div>\n"
+         << "<div class=\"card\"><div class=\"stat\">Effective rate</div><div class=\"val\">" << std::fixed << std::setprecision(3) << last.effective_rate << "</div></div>\n"
+         << "<div class=\"card\"><div class=\"stat\">RES goods (last step)</div><div class=\"val\">" << last.total_res << "</div></div>\n"
+         << "<div class=\"card\"><div class=\"stat\">IND goods (last step)</div><div class=\"val\">" << last.total_ind << "</div></div>\n"
+         << "<div class=\"card\"><div class=\"stat\">TECH goods (last step)</div><div class=\"val\">" << last.total_tech << "</div></div>\n"
          << "</div>\n"
          << "<div class=\"card\"><h2>Wealth Distribution</h2>" << wealth_hist << "</div>\n"
          << "<div class=\"card\"><h2>Trade Network Activity</h2>" << trade_chart << "</div>\n"
          << "<div class=\"maps\">\n"
-         << "<div class=\"card\"><h2>Resource Map — Sugar</h2>" << sugar_map << "</div>\n"
-         << "<div class=\"card\"><h2>Resource Map — Spice</h2>" << spice_map << "</div>\n"
+         << "<div class=\"card\"><h2>Resource Map — Grain</h2>" << grain_map << "</div>\n"
+         << "<div class=\"card\"><h2>Resource Map — Fruit</h2>" << fruit_map << "</div>\n"
+         << "<div class=\"card\"><h2>Resource Map — Iron</h2>" << iron_map << "</div>\n"
+         << "<div class=\"card\"><h2>Resource Map — Coal</h2>" << coal_map << "</div>\n"
          << "<div class=\"card\"><h2>Wealth Map</h2>" << wealth_map << "</div>\n"
          << "</div>\n</body></html>\n";
 

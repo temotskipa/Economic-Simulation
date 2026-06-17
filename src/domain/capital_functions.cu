@@ -1,7 +1,9 @@
 #include "flamegpu/flamegpu.h"
 
 #include "data/constants.cuh"
+#include "data/goods_catalog.cuh"
 #include "domain/capital_functions.cuh"
+#include "domain/inventory.cuh"
 #include "model/model_symbols.cuh"
 
 namespace austrian_abm {
@@ -41,18 +43,14 @@ FLAMEGPU_AGENT_FUNCTION_DEF(AdvanceRoundaboutProduction, flamegpu::MessageNone, 
         const int period = EffectiveProductionPeriod(kRoundaboutIntermediatePeriod, capital_stock);
         ++stage_progress;
         if (stage_progress >= period) {
-            int sugar_level = FLAMEGPU->getVariable<int>("sugar_level");
-            int spice_level = FLAMEGPU->getVariable<int>("spice_level");
-            if (sugar_level < kIntermediateRecipeSugar || spice_level < kIntermediateRecipeSpice) {
+            if (InventoryGet(FLAMEGPU, kGoodGrain) < kIntermediateRecipeSugar
+                || InventoryGet(FLAMEGPU, kGoodFruit) < kIntermediateRecipeSpice) {
                 production_stage = kProductionStageIdle;
                 stage_progress = 0;
             } else {
-                sugar_level -= kIntermediateRecipeSugar;
-                spice_level -= kIntermediateRecipeSpice;
-                const int intermediate_level = FLAMEGPU->getVariable<int>("intermediate_level") + 1;
-                FLAMEGPU->setVariable<int>("sugar_level", sugar_level);
-                FLAMEGPU->setVariable<int>("spice_level", spice_level);
-                FLAMEGPU->setVariable<int>("intermediate_level", intermediate_level);
+                InventoryAdd(FLAMEGPU, kGoodGrain, -kIntermediateRecipeSugar);
+                InventoryAdd(FLAMEGPU, kGoodFruit, -kIntermediateRecipeSpice);
+                InventoryAdd(FLAMEGPU, kGoodIntermediate, 1);
                 production_stage = kProductionStageFinal;
                 stage_progress = 0;
             }
@@ -61,15 +59,12 @@ FLAMEGPU_AGENT_FUNCTION_DEF(AdvanceRoundaboutProduction, flamegpu::MessageNone, 
         const int period = EffectiveProductionPeriod(kRoundaboutFinalPeriod, capital_stock);
         ++stage_progress;
         if (stage_progress >= period) {
-            int intermediate_level = FLAMEGPU->getVariable<int>("intermediate_level");
-            if (intermediate_level < kFinalRecipeIntermediate) {
+            if (InventoryGet(FLAMEGPU, kGoodIntermediate) < kFinalRecipeIntermediate) {
                 production_stage = kProductionStageIdle;
                 stage_progress = 0;
             } else {
-                --intermediate_level;
-                const int food_level = FLAMEGPU->getVariable<int>("food_level") + 1;
-                FLAMEGPU->setVariable<int>("intermediate_level", intermediate_level);
-                FLAMEGPU->setVariable<int>("food_level", food_level);
+                InventoryAdd(FLAMEGPU, kGoodIntermediate, -kFinalRecipeIntermediate);
+                InventoryAdd(FLAMEGPU, kGoodFood, 1);
                 FLAMEGPU->setVariable<int>("step_production", 1);
                 production_stage = kProductionStageIdle;
                 stage_progress = 0;

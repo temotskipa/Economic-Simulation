@@ -2,16 +2,17 @@
 
 #include "flamegpu/flamegpu.h"
 
+#include "data/goods_catalog.cuh"
 #include "util/math.cuh"
 
 namespace austrian_abm {
 
-FLAMEGPU_HOST_DEVICE_FUNCTION float MarginalUtilitySugar(const int sugar_level, const int spice_level) {
-    return 1.0f / (1.0f + static_cast<float>(sugar_level) + 0.25f * static_cast<float>(spice_level));
-}
-
-FLAMEGPU_HOST_DEVICE_FUNCTION float MarginalUtilitySpice(const int sugar_level, const int spice_level) {
-    return 1.0f / (1.0f + static_cast<float>(spice_level) + 0.25f * static_cast<float>(sugar_level));
+FLAMEGPU_HOST_DEVICE_FUNCTION float MarginalUtilityForGood(
+    const int good,
+    const int held,
+    const int peer_held) {
+    return GoodUtilityWeight(good)
+        / (1.0f + static_cast<float>(held) + 0.25f * static_cast<float>(peer_held));
 }
 
 FLAMEGPU_HOST_DEVICE_FUNCTION float ReservationBidPrice(

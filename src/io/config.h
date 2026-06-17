@@ -13,6 +13,9 @@ struct SimulationConfig {
     float occupancy = 0.1f;
     float initial_money = 100.0f;
     unsigned int good_stages = 2u;
+    float natural_rate = 0.08f;
+    float policy_rate = 0.02f;
+    unsigned int rate_shock_step = 6u;
 };
 
 std::string SanitizeEnvForLog(const char* raw);

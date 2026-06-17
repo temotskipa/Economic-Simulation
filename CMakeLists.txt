@@ -34,15 +34,20 @@ SET(ALL_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/domain/production_functions.cu
     ${CMAKE_CURRENT_SOURCE_DIR}/src/domain/capital_functions.cu
     ${CMAKE_CURRENT_SOURCE_DIR}/src/host/seed_grid.cu
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/host/seed_banks.cu
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/host/step_banking.cu
     ${CMAKE_CURRENT_SOURCE_DIR}/src/host/step_match_trades.cu
     ${CMAKE_CURRENT_SOURCE_DIR}/src/host/step_log.cu
     ${CMAKE_CURRENT_SOURCE_DIR}/src/io/config.cu
     ${CMAKE_CURRENT_SOURCE_DIR}/src/io/report_html.cu
     ${CMAKE_CURRENT_SOURCE_DIR}/src/data/constants.cuh
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/data/goods_catalog.cuh
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/domain/inventory.cuh
     ${CMAKE_CURRENT_SOURCE_DIR}/src/domain/trade_functions.cuh
     ${CMAKE_CURRENT_SOURCE_DIR}/src/domain/production_functions.cuh
     ${CMAKE_CURRENT_SOURCE_DIR}/src/domain/present_value.cuh
     ${CMAKE_CURRENT_SOURCE_DIR}/src/domain/capital_functions.cuh
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/domain/credit_functions.cuh
     ${CMAKE_CURRENT_SOURCE_DIR}/src/io/report_html.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/model/build_model.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/model/model_symbols.cuh

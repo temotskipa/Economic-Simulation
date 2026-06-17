@@ -20,6 +20,9 @@ $env:AUSTRIAN_ABM_REPORT_DIR = $ReportDir
 $env:AUSTRIAN_ABM_GRID_WIDTH = "224"
 $env:AUSTRIAN_ABM_GRID_HEIGHT = "224"
 $env:AUSTRIAN_ABM_OCCUPANCY = "0.1"
+$env:AUSTRIAN_ABM_NATURAL_RATE = "0.08"
+$env:AUSTRIAN_ABM_POLICY_RATE = "0.02"
+$env:AUSTRIAN_ABM_RATE_SHOCK_STEP = "6"
 
 Push-Location $RepoRoot
 try {
@@ -46,15 +49,47 @@ try {
     }
     if (-not $hasProduction) { throw "Golden run produced no food production" }
 
-    $hasCapitalGrowth = $false
-    if ($lines.Count -ge 2) {
-        $firstCapital = 0
-        $lastCapital = 0
-        if ($lines[0] -match '"total_capital":(\d+)') { $firstCapital = [int]$Matches[1] }
-        if ($lines[-1] -match '"total_capital":(\d+)') { $lastCapital = [int]$Matches[1] }
-        if ($lastCapital -gt $firstCapital) { $hasCapitalGrowth = $true }
+    $hasInvestment = $false
+    foreach ($line in $lines) {
+        if ($line -match '"investment_count":([1-9][0-9]*)') { $hasInvestment = $true }
     }
-    if (-not $hasCapitalGrowth) { throw "Golden run did not show capital stock growth" }
+    if (-not $hasInvestment) { throw "Golden run produced no capital investment" }
+
+    $hasIndustrialGoods = $false
+    foreach ($line in $lines) {
+        if ($line -match '"total_ind":([1-9][0-9]*)') { $hasIndustrialGoods = $true }
+    }
+    if (-not $hasIndustrialGoods) { throw "Golden run produced no industrial (IND) goods" }
+
+    $hasCredit = $false
+    foreach ($line in $lines) {
+        if ($line -match '"credit_created":([1-9][0-9]*)') { $hasCredit = $true }
+    }
+    if (-not $hasCredit) { throw "Golden run produced no bank credit" }
+
+    $preShockRoundabout = 0
+    $postShockRoundabout = 0
+    $preShockRate = 0.0
+    $postShockRate = 0.0
+    foreach ($line in $lines) {
+        if ($line -match '"step":(\d+)') {
+            $step = [int]$Matches[1]
+            $roundabout = 0
+            $rate = 0.0
+            if ($line -match '"roundabout_count":(\d+)') { $roundabout = [int]$Matches[1] }
+            if ($line -match '"effective_rate":([0-9.]+)') { $rate = [double]$Matches[1] }
+            if ($step -lt 6) {
+                if ($roundabout -gt $preShockRoundabout) { $preShockRoundabout = $roundabout }
+                $preShockRate = $rate
+            } elseif ($step -ge 6) {
+                if ($roundabout -gt $postShockRoundabout) { $postShockRoundabout = $roundabout }
+                $postShockRate = $rate
+            }
+        }
+    }
+    if ($postShockRate -le $preShockRate) {
+        throw "Rate shock did not raise effective_rate (pre=$preShockRate post=$postShockRate)"
+    }
 
     $Html = Join-Path $ReportDir "austrian_abm_report.html"
     if (-not (Test-Path $Html)) { throw "Missing austrian_abm_report.html" }

@@ -23,11 +23,20 @@ constexpr int kSugarMaxCapacity = 7;
 constexpr int kSpiceMaxCapacity = 7;
 constexpr int kDefaultMetabolism = 6;
 
-constexpr int kGoodSugar = 0;
-constexpr int kGoodSpice = 1;
-constexpr int kGoodFood = 2;
 constexpr int kTradeBid = 0;
 constexpr int kTradeAsk = 1;
+
+constexpr int kIronGrowbackRate = 1;
+constexpr int kCoalGrowbackRate = 1;
+constexpr int kIronMaxCapacity = 5;
+constexpr int kCoalMaxCapacity = 5;
+
+constexpr int kToolsRecipeIron = 1;
+constexpr int kToolsRecipeCoal = 1;
+constexpr int kSteelRecipeIron = 2;
+constexpr int kSteelRecipeCoal = 1;
+constexpr int kEnginesRecipeSteel = 1;
+constexpr int kEnginesRecipeTools = 1;
 
 constexpr int kActivityHarvest = 0;
 constexpr int kActivityProduce = 1;
@@ -61,5 +70,17 @@ constexpr float kRoundaboutFoodMultiplier = 2.0f;
 constexpr float kMinTimePreference = 0.02f;
 constexpr float kMaxTimePreference = 0.35f;
 constexpr float kCapitalOwnerMaxTimePreference = 0.15f;
+
+constexpr unsigned int kDefaultBankCount = 4u;
+constexpr float kBankInitialReserves = 5000.0f;
+constexpr float kReserveLendingMultiplier = 4.0f;
+constexpr float kDefaultNaturalRate = 0.08f;
+constexpr float kDefaultPolicyRate = 0.02f;
+constexpr unsigned int kDefaultRateShockStep = 6u;
+constexpr float kDefaultLoanSize = 40.0f;
+constexpr float kMaxLoanBalance = 120.0f;
+constexpr float kDepositThreshold = 50.0f;
+constexpr float kDepositFraction = 0.3f;
+constexpr float kEntrepreneurMinSkill = 0.45f;
 
 }  // namespace austrian_abm

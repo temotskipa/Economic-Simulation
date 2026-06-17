@@ -16,6 +16,9 @@ struct MarketStepMetrics {
     long long total_sugar = 0;
     long long total_spice = 0;
     long long total_food = 0;
+    long long total_res = 0;
+    long long total_ind = 0;
+    long long total_tech = 0;
     unsigned int production_count = 0u;
     unsigned int producer_count = 0u;
     long long total_capital = 0;
@@ -23,6 +26,11 @@ struct MarketStepMetrics {
     unsigned int investment_count = 0u;
     unsigned int roundabout_count = 0u;
     unsigned int capital_owner_count = 0u;
+    unsigned int credit_created = 0u;
+    float total_loans = 0.0f;
+    float effective_rate = 0.0f;
+    unsigned int rate_suppressed = 0u;
+    unsigned int malinvestment_count = 0u;
 };
 
 void AppendMarketHistory(const MarketStepMetrics& metrics);

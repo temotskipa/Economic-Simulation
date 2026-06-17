@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "data/constants.cuh"
+#include "data/goods_catalog.cuh"
 #include "io/config.h"
 
 namespace austrian_abm {
@@ -17,15 +18,14 @@ float ComputeWealthGini(flamegpu::DeviceAgentVector& population) {
     for (const auto& cell : population) {
         if (cell.getVariable<int>("status") != kAgentStatusOccupied) continue;
         const float money = cell.getVariable<float>("money");
-        const int sugar = cell.getVariable<int>("sugar_level");
-        const int spice = cell.getVariable<int>("spice_level");
-        const int food = cell.getVariable<int>("food_level");
+        float goods_value = 0.0f;
+        for (int good = 0; good < kGoodCount; ++good) {
+            goods_value += static_cast<float>(cell.getVariable<int, kGoodCount>("inventory", good))
+                * GoodWealthValue(good);
+        }
         const int capital = cell.getVariable<int>("capital_stock");
-        const int intermediate = cell.getVariable<int>("intermediate_level");
-        wealth.push_back(money + static_cast<float>(sugar) + static_cast<float>(spice)
-            + static_cast<float>(food) * kFoodValueMultiplier
-            + static_cast<float>(capital) * kCapitalValuePerUnit
-            + static_cast<float>(intermediate) * kFoodValueMultiplier);
+        wealth.push_back(money + goods_value
+            + static_cast<float>(capital) * kCapitalValuePerUnit);
     }
     if (wealth.size() < 2u) return 0.0f;
 
@@ -59,6 +59,9 @@ void AppendMarketHistory(const MarketStepMetrics& metrics) {
         << ",\"total_sugar\":" << metrics.total_sugar
         << ",\"total_spice\":" << metrics.total_spice
         << ",\"total_food\":" << metrics.total_food
+        << ",\"total_res\":" << metrics.total_res
+        << ",\"total_ind\":" << metrics.total_ind
+        << ",\"total_tech\":" << metrics.total_tech
         << ",\"production_count\":" << metrics.production_count
         << ",\"producer_count\":" << metrics.producer_count
         << ",\"total_capital\":" << metrics.total_capital
@@ -66,6 +69,11 @@ void AppendMarketHistory(const MarketStepMetrics& metrics) {
         << ",\"investment_count\":" << metrics.investment_count
         << ",\"roundabout_count\":" << metrics.roundabout_count
         << ",\"capital_owner_count\":" << metrics.capital_owner_count
+        << ",\"credit_created\":" << metrics.credit_created
+        << ",\"total_loans\":" << metrics.total_loans
+        << ",\"effective_rate\":" << metrics.effective_rate
+        << ",\"rate_suppressed\":" << metrics.rate_suppressed
+        << ",\"malinvestment_count\":" << metrics.malinvestment_count
         << "}\n";
 }
 
