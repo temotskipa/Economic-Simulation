@@ -52,6 +52,9 @@ FLAMEGPU_AGENT_FUNCTION_DEF(MovementRequest, flamegpu::MessageArray2D, flamegpu:
     FLAMEGPU->message_out.setVariable<int>("spice_level", FLAMEGPU->getVariable<int>("spice_level"));
     FLAMEGPU->message_out.setVariable<int>("metabolism", FLAMEGPU->getVariable<int>("metabolism"));
     FLAMEGPU->message_out.setVariable<float>("money", FLAMEGPU->getVariable<float>("money"));
+    FLAMEGPU->message_out.setVariable<int>("food_level", FLAMEGPU->getVariable<int>("food_level"));
+    FLAMEGPU->message_out.setVariable<float>("production_skill", FLAMEGPU->getVariable<float>("production_skill"));
+    FLAMEGPU->message_out.setVariable<int>("activity_mode", FLAMEGPU->getVariable<int>("activity_mode"));
     FLAMEGPU->message_out.setIndex(agent_x, agent_y);
     return flamegpu::ALIVE;
 }
@@ -63,6 +66,9 @@ FLAMEGPU_AGENT_FUNCTION_DEF(MovementResponse, flamegpu::MessageArray2D, flamegpu
     int best_request_spice_level = 0;
     int best_request_metabolism = 0;
     float best_request_money = 0.0f;
+    int best_request_food_level = 0;
+    float best_request_production_skill = 0.0f;
+    int best_request_activity_mode = kActivityHarvest;
 
     int status = FLAMEGPU->getVariable<int>("status");
     const flamegpu::id_t location_id = FLAMEGPU->getID();
@@ -80,6 +86,9 @@ FLAMEGPU_AGENT_FUNCTION_DEF(MovementResponse, flamegpu::MessageArray2D, flamegpu
                 best_request_spice_level = current_message.getVariable<int>("spice_level");
                 best_request_metabolism = current_message.getVariable<int>("metabolism");
                 best_request_money = current_message.getVariable<float>("money");
+                best_request_food_level = current_message.getVariable<int>("food_level");
+                best_request_production_skill = current_message.getVariable<float>("production_skill");
+                best_request_activity_mode = current_message.getVariable<int>("activity_mode");
             }
         }
     }
@@ -93,6 +102,9 @@ FLAMEGPU_AGENT_FUNCTION_DEF(MovementResponse, flamegpu::MessageArray2D, flamegpu
         FLAMEGPU->setVariable<int>("spice_level", best_request_spice_level);
         FLAMEGPU->setVariable<int>("metabolism", best_request_metabolism);
         FLAMEGPU->setVariable<float>("money", best_request_money);
+        FLAMEGPU->setVariable<int>("food_level", best_request_food_level);
+        FLAMEGPU->setVariable<float>("production_skill", best_request_production_skill);
+        FLAMEGPU->setVariable<int>("activity_mode", best_request_activity_mode);
         FLAMEGPU->setVariable<int>("env_sugar_level", -1);
         FLAMEGPU->setVariable<int>("env_spice_level", -1);
     }
@@ -117,6 +129,9 @@ FLAMEGPU_AGENT_FUNCTION_DEF(MovementTransaction, flamegpu::MessageArray2D, flame
             FLAMEGPU->setVariable<int>("spice_level", 0);
             FLAMEGPU->setVariable<float>("money", 0.0f);
             FLAMEGPU->setVariable<int>("metabolism", 0);
+            FLAMEGPU->setVariable<int>("food_level", 0);
+            FLAMEGPU->setVariable<int>("activity_mode", kActivityHarvest);
+            FLAMEGPU->setVariable<int>("step_production", 0);
             FLAMEGPU->setVariable<int>("env_sugar_level", 0);
             FLAMEGPU->setVariable<int>("env_spice_level", 0);
         }

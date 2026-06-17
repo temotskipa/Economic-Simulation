@@ -19,7 +19,9 @@ float ComputeWealthGini(flamegpu::DeviceAgentVector& population) {
         const float money = cell.getVariable<float>("money");
         const int sugar = cell.getVariable<int>("sugar_level");
         const int spice = cell.getVariable<int>("spice_level");
-        wealth.push_back(money + static_cast<float>(sugar) + static_cast<float>(spice));
+        const int food = cell.getVariable<int>("food_level");
+        wealth.push_back(money + static_cast<float>(sugar) + static_cast<float>(spice)
+            + static_cast<float>(food) * kFoodValueMultiplier);
     }
     if (wealth.size() < 2u) return 0.0f;
 
@@ -35,15 +37,7 @@ float ComputeWealthGini(flamegpu::DeviceAgentVector& population) {
     return static_cast<float>((2.0 * weighted) / (n * sum) - (n + 1.0) / n);
 }
 
-void AppendMarketHistory(
-    const unsigned int step,
-    const float avg_price,
-    const unsigned int trades_count,
-    const float trade_volume,
-    const float wealth_gini,
-    const unsigned int population,
-    const long long total_sugar,
-    const long long total_spice) {
+void AppendMarketHistory(const MarketStepMetrics& metrics) {
     const auto report_dir = ResolveReportDirectory();
     std::filesystem::create_directories(report_dir);
     const auto path = report_dir / "market_history.jsonl";
@@ -52,14 +46,17 @@ void AppendMarketHistory(
         std::printf("Failed to open %s for append\n", path.string().c_str());
         return;
     }
-    out << "{\"step\":" << step
-        << ",\"avg_price\":" << avg_price
-        << ",\"trades_count\":" << trades_count
-        << ",\"trade_volume\":" << trade_volume
-        << ",\"wealth_gini\":" << wealth_gini
-        << ",\"population\":" << population
-        << ",\"total_sugar\":" << total_sugar
-        << ",\"total_spice\":" << total_spice
+    out << "{\"step\":" << metrics.step
+        << ",\"avg_price\":" << metrics.avg_price
+        << ",\"trades_count\":" << metrics.trades_count
+        << ",\"trade_volume\":" << metrics.trade_volume
+        << ",\"wealth_gini\":" << metrics.wealth_gini
+        << ",\"population\":" << metrics.population
+        << ",\"total_sugar\":" << metrics.total_sugar
+        << ",\"total_spice\":" << metrics.total_spice
+        << ",\"total_food\":" << metrics.total_food
+        << ",\"production_count\":" << metrics.production_count
+        << ",\"producer_count\":" << metrics.producer_count
         << "}\n";
 }
 

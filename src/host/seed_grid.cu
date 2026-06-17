@@ -22,6 +22,7 @@ FLAMEGPU_INIT_FUNCTION(SeedGrid) {
     std::uniform_int_distribution<int> agent_sugar_dist(0, kSugarMaxCapacity * 2);
     std::uniform_int_distribution<int> agent_spice_dist(0, kSpiceMaxCapacity * 2);
     std::uniform_int_distribution<int> poor_env_dist(0, kSugarMaxCapacity / 2);
+    std::uniform_real_distribution<float> skill_dist(kMinProductionSkill, kMaxProductionSkill);
 
     std::vector<std::array<unsigned int, 4>> hotspots;
     {
@@ -51,6 +52,10 @@ FLAMEGPU_INIT_FUNCTION(SeedGrid) {
                 instance.setVariable<int>("spice_level", agent_spice_dist(rng) / 2);
                 instance.setVariable<int>("metabolism", kDefaultMetabolism);
                 instance.setVariable<float>("money", initial_money);
+                instance.setVariable<int>("food_level", 0);
+                instance.setVariable<float>("production_skill", skill_dist(rng));
+                instance.setVariable<int>("activity_mode", kActivityHarvest);
+                instance.setVariable<int>("step_production", 0);
             } else {
                 instance.setVariable<int>("agent_id", -1);
                 instance.setVariable<int>("status", kAgentStatusUnoccupied);
@@ -58,6 +63,10 @@ FLAMEGPU_INIT_FUNCTION(SeedGrid) {
                 instance.setVariable<int>("spice_level", 0);
                 instance.setVariable<int>("metabolism", 0);
                 instance.setVariable<float>("money", 0.0f);
+                instance.setVariable<int>("food_level", 0);
+                instance.setVariable<float>("production_skill", 0.0f);
+                instance.setVariable<int>("activity_mode", kActivityHarvest);
+                instance.setVariable<int>("step_production", 0);
             }
 
             unsigned int env_sugar = 0u;

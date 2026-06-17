@@ -158,24 +158,45 @@ FLAMEGPU_STEP_FUNCTION(LogMarketStep) {
     flamegpu::DeviceAgentVector population = FLAMEGPU->agent("cell").getPopulationData();
     long long total_sugar = 0;
     long long total_spice = 0;
+    long long total_food = 0;
     unsigned int population_count = 0u;
+    unsigned int production_count = 0u;
+    unsigned int producer_count = 0u;
     for (const auto& cell : population) {
         if (cell.getVariable<int>("status") != kAgentStatusOccupied) continue;
         ++population_count;
         total_sugar += cell.getVariable<int>("sugar_level");
         total_spice += cell.getVariable<int>("spice_level");
+        total_food += cell.getVariable<int>("food_level");
+        if (cell.getVariable<int>("step_production") > 0) {
+            ++production_count;
+        }
+        if (cell.getVariable<int>("activity_mode") == kActivityProduce) {
+            ++producer_count;
+        }
     }
 
-    const unsigned int step = FLAMEGPU->getStepCounter();
-    AppendMarketHistory(
-        step,
-        FLAMEGPU->environment.getProperty<float>("AVG_TRADE_PRICE"),
-        FLAMEGPU->environment.getProperty<unsigned int>("TRADES_COUNT"),
-        FLAMEGPU->environment.getProperty<float>("TRADE_VOLUME"),
-        ComputeWealthGini(population),
-        population_count,
-        total_sugar,
-        total_spice);
+    FLAMEGPU->environment.setProperty<unsigned int>("PRODUCTION_COUNT", production_count);
+    FLAMEGPU->environment.setProperty<unsigned int>("PRODUCER_COUNT", producer_count);
+
+    MarketStepMetrics metrics;
+    metrics.step = FLAMEGPU->getStepCounter();
+    metrics.avg_price = FLAMEGPU->environment.getProperty<float>("AVG_TRADE_PRICE");
+    metrics.trades_count = FLAMEGPU->environment.getProperty<unsigned int>("TRADES_COUNT");
+    metrics.trade_volume = FLAMEGPU->environment.getProperty<float>("TRADE_VOLUME");
+    metrics.wealth_gini = ComputeWealthGini(population);
+    metrics.population = population_count;
+    metrics.total_sugar = total_sugar;
+    metrics.total_spice = total_spice;
+    metrics.total_food = total_food;
+    metrics.production_count = production_count;
+    metrics.producer_count = producer_count;
+    AppendMarketHistory(metrics);
+
+    if (production_count > 0u) {
+        std::printf("production=%u producers=%u total_food=%lld\n",
+            production_count, producer_count, total_food);
+    }
 }
 
 }  // namespace austrian_abm

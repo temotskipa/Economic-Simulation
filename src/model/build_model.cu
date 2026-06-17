@@ -24,6 +24,10 @@ flamegpu::AgentDescription MakeCoreCell(flamegpu::ModelDescription& model) {
     cell.newVariable<float>("sugar_ask");
     cell.newVariable<float>("spice_bid");
     cell.newVariable<float>("spice_ask");
+    cell.newVariable<int>("food_level");
+    cell.newVariable<float>("production_skill");
+    cell.newVariable<int>("activity_mode");
+    cell.newVariable<int>("step_production");
     return cell;
 }
 
@@ -43,6 +47,8 @@ void BuildModel(flamegpu::ModelDescription& model, const SimulationConfig& confi
     env.newProperty<float>("AVG_TRADE_PRICE", 0.0f);
     env.newProperty<float>("LAST_SUGAR_PRICE", 1.0f);
     env.newProperty<float>("LAST_SPICE_PRICE", 1.0f);
+    env.newProperty<unsigned int>("PRODUCTION_COUNT", 0u);
+    env.newProperty<unsigned int>("PRODUCER_COUNT", 0u);
 
     flamegpu::ModelDescription movement_model("movement_model");
     {
@@ -62,6 +68,9 @@ void BuildModel(flamegpu::ModelDescription& model, const SimulationConfig& confi
             message.newVariable<int>("spice_level");
             message.newVariable<int>("metabolism");
             message.newVariable<float>("money");
+            message.newVariable<int>("food_level");
+            message.newVariable<float>("production_skill");
+            message.newVariable<int>("activity_mode");
             message.setDimensions(config.grid_width, config.grid_height);
         }
         {
@@ -100,6 +109,8 @@ void BuildModel(flamegpu::ModelDescription& model, const SimulationConfig& confi
 
     flamegpu::AgentDescription cell = MakeCoreCell(model);
     cell.newFunction("MetaboliseAndGrowback", MetaboliseAndGrowback);
+    cell.newFunction("ChooseProductionActivity", ChooseProductionActivity);
+    cell.newFunction("ProduceFood", ProduceFood);
     auto fn_trade = cell.newFunction("OutputTradeOffers", OutputTradeOffers);
     fn_trade.setMessageOutput("trade_offer");
 
@@ -109,7 +120,9 @@ void BuildModel(flamegpu::ModelDescription& model, const SimulationConfig& confi
 
     model.newLayer("L1_MetaboliseAndGrowback").addAgentFunction(cell.getFunction("MetaboliseAndGrowback"));
     model.newLayer("L2_Movement").addSubModel(movement_sub);
-    model.newLayer("L3_OutputTradeOffers").addAgentFunction(fn_trade);
+    model.newLayer("L3_ChooseProductionActivity").addAgentFunction(cell.getFunction("ChooseProductionActivity"));
+    model.newLayer("L4_ProduceFood").addAgentFunction(cell.getFunction("ProduceFood"));
+    model.newLayer("L5_OutputTradeOffers").addAgentFunction(fn_trade);
 
     model.addStepFunction(MatchTrades);
     model.addStepFunction(LogMarketStep);

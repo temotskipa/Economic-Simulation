@@ -2,6 +2,7 @@
 
 #include "data/constants.cuh"
 #include "io/config.h"
+#include "io/report_html.h"
 #include "model/build_model.h"
 
 namespace austrian_abm {
@@ -16,6 +17,10 @@ void RunMain(int argc, const char** argv) {
     simulation.SimulationConfig().random_seed = config.seed;
     simulation.applyConfig();
     simulation.simulate();
+
+    flamegpu::AgentVector population(model.Agent("cell"));
+    simulation.getPopulationData(population);
+    WriteSimulationReport(population, config, ResolveReportDirectory());
 }
 
 }  // namespace austrian_abm

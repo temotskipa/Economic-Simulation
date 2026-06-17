@@ -40,7 +40,16 @@ try {
     }
     if (-not $hasTrade) { throw "Golden run produced no trades (TRADES_COUNT always 0)" }
 
-    Write-Host "Golden run passed. Log: $Jsonl ($($lines.Count) steps)"
+    $hasProduction = $false
+    foreach ($line in $lines) {
+        if ($line -match '"production_count":([1-9][0-9]*)') { $hasProduction = $true }
+    }
+    if (-not $hasProduction) { throw "Golden run produced no food production" }
+
+    $Html = Join-Path $ReportDir "austrian_abm_report.html"
+    if (-not (Test-Path $Html)) { throw "Missing austrian_abm_report.html" }
+
+    Write-Host "Golden run passed. Log: $Jsonl ($($lines.Count) steps), report: $Html"
 } finally {
     Pop-Location
 }

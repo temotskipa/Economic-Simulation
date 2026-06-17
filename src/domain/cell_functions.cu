@@ -8,6 +8,7 @@ namespace austrian_abm {
 FLAMEGPU_AGENT_FUNCTION_DEF(MetaboliseAndGrowback, flamegpu::MessageNone, flamegpu::MessageNone) {
     int sugar_level = FLAMEGPU->getVariable<int>("sugar_level");
     int spice_level = FLAMEGPU->getVariable<int>("spice_level");
+    int food_level = FLAMEGPU->getVariable<int>("food_level");
     int env_sugar_level = FLAMEGPU->getVariable<int>("env_sugar_level");
     int env_spice_level = FLAMEGPU->getVariable<int>("env_spice_level");
     int env_max_sugar_level = FLAMEGPU->getVariable<int>("env_max_sugar_level");
@@ -26,7 +27,10 @@ FLAMEGPU_AGENT_FUNCTION_DEF(MetaboliseAndGrowback, flamegpu::MessageNone, flameg
 
         int metabolism = FLAMEGPU->getVariable<int>("metabolism");
         while (metabolism > 0) {
-            if (sugar_level > 0) {
+            if (food_level > 0) {
+                --food_level;
+                metabolism -= kFoodMetabolismValue;
+            } else if (sugar_level > 0) {
                 --sugar_level;
                 --metabolism;
             } else if (spice_level > 0) {
@@ -36,8 +40,9 @@ FLAMEGPU_AGENT_FUNCTION_DEF(MetaboliseAndGrowback, flamegpu::MessageNone, flameg
                 break;
             }
         }
+        if (metabolism < 0) metabolism = 0;
 
-        if (sugar_level <= 0 && spice_level <= 0) {
+        if (sugar_level <= 0 && spice_level <= 0 && food_level <= 0) {
             status = kAgentStatusUnoccupied;
             FLAMEGPU->setVariable<int>("agent_id", -1);
             FLAMEGPU->setVariable<float>("money", 0.0f);
@@ -64,6 +69,7 @@ FLAMEGPU_AGENT_FUNCTION_DEF(MetaboliseAndGrowback, flamegpu::MessageNone, flameg
 
     FLAMEGPU->setVariable<int>("sugar_level", sugar_level);
     FLAMEGPU->setVariable<int>("spice_level", spice_level);
+    FLAMEGPU->setVariable<int>("food_level", food_level);
     FLAMEGPU->setVariable<int>("env_sugar_level", env_sugar_level);
     FLAMEGPU->setVariable<int>("env_spice_level", env_spice_level);
     FLAMEGPU->setVariable<int>("status", status);

@@ -25,7 +25,18 @@ constexpr int kDefaultMetabolism = 6;
 
 constexpr int kGoodSugar = 0;
 constexpr int kGoodSpice = 1;
+constexpr int kGoodFood = 2;
 constexpr int kTradeBid = 0;
 constexpr int kTradeAsk = 1;
+
+constexpr int kActivityHarvest = 0;
+constexpr int kActivityProduce = 1;
+
+constexpr int kFoodRecipeSugar = 1;
+constexpr int kFoodRecipeSpice = 1;
+constexpr int kFoodMetabolismValue = 3;
+constexpr float kFoodValueMultiplier = 1.5f;
+constexpr float kMinProductionSkill = 0.3f;
+constexpr float kMaxProductionSkill = 1.0f;
 
 }  // namespace austrian_abm

@@ -6,14 +6,20 @@ namespace austrian_abm {
 
 float ComputeWealthGini(flamegpu::DeviceAgentVector& population);
 
-void AppendMarketHistory(
-    unsigned int step,
-    float avg_price,
-    unsigned int trades_count,
-    float trade_volume,
-    float wealth_gini,
-    unsigned int population,
-    long long total_sugar,
-    long long total_spice);
+struct MarketStepMetrics {
+    unsigned int step = 0u;
+    float avg_price = 0.0f;
+    unsigned int trades_count = 0u;
+    float trade_volume = 0.0f;
+    float wealth_gini = 0.0f;
+    unsigned int population = 0u;
+    long long total_sugar = 0;
+    long long total_spice = 0;
+    long long total_food = 0;
+    unsigned int production_count = 0u;
+    unsigned int producer_count = 0u;
+};
+
+void AppendMarketHistory(const MarketStepMetrics& metrics);
 
 }  // namespace austrian_abm
